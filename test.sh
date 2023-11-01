@@ -1,9 +1,10 @@
 #!/bin/bash
+RUST_9CC=target/release/rust-9cc
 assert() {
     expected="$1"
     input="$2"
 
-    cargo run -- "$input" > tmp.s
+    ${RUST_9CC} "$input" > tmp.s
     cc -o tmp tmp.s
     ./tmp
     actual="$?"
@@ -17,6 +18,6 @@ assert() {
 }
 
 assert 0 0
-#assert 42 42
+assert 42 42
 
 echo OK
