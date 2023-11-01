@@ -9,7 +9,7 @@ test: $(RUST_9CC)
 clean:
 	rm -f $(RUST_9CC)
 
-RUST_9CC: $(SRC)
+$(RUST_9CC): $(SRC)
 	cargo build --release
 
 .PHONY: all test clean
