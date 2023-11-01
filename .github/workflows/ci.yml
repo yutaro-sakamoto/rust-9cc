@@ -1,0 +1,39 @@
+name: CI
+on:
+  push:
+  pull_request:
+    types: [opened, reopened, review_requested, synchronize]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Format check
+      run: |
+        rustup component add rustfmt
+        cargo fmt --all -- --check
+    
+    - name: Run Clippy
+      run: |
+        rustup component add clippy
+        cargo clippy
+
+    - name: Build
+      run: cargo build
+
+    - name: Unit Test
+      run: cargo test
+
+    - name: Integration Test
+      run: make test
