@@ -19,5 +19,8 @@ assert() {
 
 assert 17 '5+20-4*2'
 assert 7 '6/2+2*(1+1)'
+assert 7 '-5+20-4*2'
+assert 1 '6/(-2)+2*(1+1)'
+assert 1 '6/-2+2*(1+1)'
 
 echo OK

@@ -5,9 +5,14 @@ pub enum ArithExpr {
 }
 
 pub enum Factor {
+    Unary(Box<Unary>),
+    Mul(Box<Factor>, Box<Unary>),
+    Div(Box<Factor>, Box<Unary>),
+}
+
+pub enum Unary {
     Atom(Box<Atom>),
-    Mul(Box<Factor>, Box<Atom>),
-    Div(Box<Factor>, Box<Atom>),
+    Neg(Box<Atom>),
 }
 
 pub enum Atom {
@@ -48,22 +53,34 @@ fn print_assembly_arith_expr(expr: Box<ArithExpr>) {
 
 fn print_assembly_factor(factor: Box<Factor>) {
     match *factor {
-        Factor::Atom(atom) => print_assembly_atom(atom),
-        Factor::Mul(factor, atom) => {
+        Factor::Unary(unary) => print_assembly_unary(unary),
+        Factor::Mul(factor, unary) => {
             print_assembly_factor(factor);
-            print_assembly_atom(atom);
+            print_assembly_unary(unary);
             println!("  pop rdi");
             println!("  pop rax");
             println!("  mul rdi");
             println!("  push rax");
         }
-        Factor::Div(factor, atom) => {
+        Factor::Div(factor, unary) => {
             print_assembly_factor(factor);
-            print_assembly_atom(atom);
+            print_assembly_unary(unary);
             println!("  pop rdi");
             println!("  pop rax");
             println!("  cqo");
-            println!("  div rdi");
+            println!("  idiv rdi");
+            println!("  push rax");
+        }
+    }
+}
+
+fn print_assembly_unary(unary: Box<Unary>) {
+    match *unary {
+        Unary::Atom(atom) => print_assembly_atom(atom),
+        Unary::Neg(atom) => {
+            print_assembly_atom(atom);
+            println!("  pop rax");
+            println!("  neg rax");
             println!("  push rax");
         }
     }

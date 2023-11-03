@@ -10,9 +10,15 @@ pub ArithExpr: ArithExpr = {
 }
 
 Factor: Factor = {
-    <Atom> => Factor::Atom(Box::new(<>)),
-    <left:Factor> "*" <right:Atom> => Factor::Mul(Box::new(left), Box::new(right)),
-    <left:Factor> "/" <right:Atom> => Factor::Div(Box::new(left), Box::new(right)),
+    <Unary> => Factor::Unary(Box::new(<>)),
+    <left:Factor> "*" <right:Unary> => Factor::Mul(Box::new(left), Box::new(right)),
+    <left:Factor> "/" <right:Unary> => Factor::Div(Box::new(left), Box::new(right)),
+}
+
+Unary: Unary = {
+    "-" <atom:Atom> => Unary::Neg(Box::new(atom)),
+    "+" <atom:Atom> => Unary::Atom(Box::new(atom)),
+    <atom:Atom> => Unary::Atom(Box::new(atom)),
 }
 
 Atom: Atom = {
