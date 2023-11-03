@@ -1,0 +1,21 @@
+use std::str::FromStr;
+use crate::ast::*;
+
+grammar;
+
+pub ArithExpr: ArithExpr = {
+    <Factor> => ArithExpr::Factor(Box::new(<>)),
+    <expr:ArithExpr> "+" <factor:Factor> => ArithExpr::Add(Box::new(expr), Box::new(factor)),
+    <expr:ArithExpr> "-" <factor:Factor> => ArithExpr::Sub(Box::new(expr), Box::new(factor)),
+}
+
+Factor: Factor = {
+    <Atom> => Factor::Atom(Box::new(<>)),
+    <left:Factor> "*" <right:Atom> => Factor::Mul(Box::new(left), Box::new(right)),
+    <left:Factor> "/" <right:Atom> => Factor::Div(Box::new(left), Box::new(right)),
+}
+
+Atom: Atom = {
+    r"[0-9]+" => Atom::Number(i32::from_str(<>).unwrap()),
+    "(" <expr:ArithExpr> ")" => Atom::ArithExpr(Box::new(expr)),
+}
