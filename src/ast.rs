@@ -1,3 +1,10 @@
+pub enum Expr {
+    ArithExpr(Box<ArithExpr>),
+    Equal(Box<ArithExpr>, Box<ArithExpr>),
+    NotEqual(Box<ArithExpr>, Box<ArithExpr>),
+    Less(Box<ArithExpr>, Box<ArithExpr>),
+    LessOrEqual(Box<ArithExpr>, Box<ArithExpr>),
+}
 pub enum ArithExpr {
     Factor(Box<Factor>),
     Add(Box<ArithExpr>, Box<Factor>),
@@ -17,16 +24,37 @@ pub enum Unary {
 
 pub enum Atom {
     Number(i32),
-    ArithExpr(Box<ArithExpr>),
+    Expr(Box<Expr>),
 }
 
-pub fn print_assembly(expr: Box<ArithExpr>) {
+pub fn print_assembly(expr: Box<Expr>) {
     println!(".intel_syntax noprefix");
     println!(".global main\n");
     println!("main:");
-    print_assembly_arith_expr(expr);
+    print_assembly_expr(expr);
     println!("  pop rax");
     println!("  ret");
+}
+
+fn print_assembly_expr(expr: Box<Expr>) {
+    match *expr {
+        Expr::ArithExpr(arith_expr) => print_assembly_arith_expr(arith_expr),
+        Expr::Equal(left, right) => print_compare_instruction("sete", left, right),
+        Expr::NotEqual(left, right) => print_compare_instruction("setne", left, right),
+        Expr::Less(left, right) => print_compare_instruction("setl", left, right),
+        Expr::LessOrEqual(left, right) => print_compare_instruction("setle", left, right),
+    }
+}
+
+fn print_compare_instruction(instruction: &str, left: Box<ArithExpr>, right: Box<ArithExpr>) {
+    print_assembly_arith_expr(left);
+    print_assembly_arith_expr(right);
+    println!("  pop rdi");
+    println!("  pop rax");
+    println!("  cmp rax, rdi");
+    println!("  {} al", instruction);
+    println!("  movzb rax, al");
+    println!("  push rax");
 }
 
 fn print_assembly_arith_expr(expr: Box<ArithExpr>) {
@@ -89,6 +117,6 @@ fn print_assembly_unary(unary: Box<Unary>) {
 fn print_assembly_atom(atom: Box<Atom>) {
     match *atom {
         Atom::Number(n) => println!("  push {}", n),
-        Atom::ArithExpr(expr) => print_assembly_arith_expr(expr),
+        Atom::Expr(expr) => print_assembly_expr(expr),
     }
 }

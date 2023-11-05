@@ -18,7 +18,7 @@ fn main() -> Result<(), CompilerError> {
         eprintln!("The number of arguments is invalid");
         return Err(CompilerError::InvalidNumberOfArguments);
     }
-    match parser::ArithExprParser::new().parse(&args[1]) {
+    match parser::ExprParser::new().parse(&args[1]) {
         Ok(parse_tree) => print_assembly(Box::new(parse_tree)),
         Err(e) => {
             eprintln!("Failed to parse: {}", e);

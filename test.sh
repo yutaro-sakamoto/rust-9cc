@@ -23,4 +23,28 @@ assert 7 '-5+20-4*2'
 assert 1 '6/(-2)+2*(1+1)'
 assert 1 '6/-2+2*(1+1)'
 
+# comparison test
+
+assert 1 '1==1'
+assert 0 '1==2'
+
+assert 1 '1!=2'
+assert 0 '1!=1'
+
+assert 1 '-1<2'
+assert 0 '-1<-2'
+assert 0 '-1<-1'
+
+assert 1 '2>-1'
+assert 0 '-2>-1'
+assert 0 '-1>-1'
+
+assert 1 '-1<=2'
+assert 0 '-1<=-2'
+assert 1 '-1<=-1'
+
+assert 1 '2>=-1'
+assert 0 '-2>=-1'
+assert 1 '-1>=-1'
+
 echo OK
