@@ -2,7 +2,16 @@ use std::str::FromStr;
 use crate::ast::*;
 
 grammar;
-pub Expr: Expr = {
+pub Program: Program = {
+    <statements:Statement*> => Program { statements: statements },
+}
+        
+Statement: Statement = {
+    <identifier: Identifier> "=" <expr: Expr> ";" => Statement::Assign(identifier, Box::new(expr)),
+    <Expr> ";" => Statement::Expr(Box::new(<>)),
+}
+
+Expr: Expr = {
     <ArithExpr> => Expr::ArithExpr(Box::new(<>)),
     <left:ArithExpr> "==" <right:ArithExpr> => Expr::Equal(Box::new(left), Box::new(right)),
     <left:ArithExpr> "!=" <right:ArithExpr> => Expr::NotEqual(Box::new(left), Box::new(right)),
@@ -33,4 +42,8 @@ Unary: Unary = {
 Atom: Atom = {
     r"[0-9]+" => Atom::Number(i32::from_str(<>).unwrap()),
     "(" <expr:Expr> ")" => Atom::Expr(Box::new(expr)),
+}
+
+Identifier: String = {
+    r"[a-zA-Z_][a-zA-Z0-9_]*" => String::from_str(<>).unwrap(),
 }

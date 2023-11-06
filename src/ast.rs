@@ -1,3 +1,11 @@
+use std::vec::Vec;
+pub struct Program {
+    pub statements: Vec<Statement>,
+}
+pub enum Statement {
+    Expr(Box<Expr>),
+    Assign(String, Box<Expr>),
+}
 pub enum Expr {
     ArithExpr(Box<ArithExpr>),
     Equal(Box<ArithExpr>, Box<ArithExpr>),
@@ -27,13 +35,25 @@ pub enum Atom {
     Expr(Box<Expr>),
 }
 
-pub fn print_assembly(expr: Box<Expr>) {
+pub fn print_assembly(program: Box<Program>) {
     println!(".intel_syntax noprefix");
     println!(".global main\n");
     println!("main:");
-    print_assembly_expr(expr);
+    for statement in program.statements {
+        print_assembly_statement(Box::new(statement));
+    }
     println!("  pop rax");
     println!("  ret");
+}
+
+pub fn print_assembly_statement(statement: Box<Statement>) {
+    match *statement {
+        Statement::Expr(expr) => print_assembly_expr(expr),
+        Statement::Assign(_, expr) => {
+            eprintln!("Warning: Assign statement is not implemented");
+            print_assembly_expr(expr);
+        }
+    }
 }
 
 fn print_assembly_expr(expr: Box<Expr>) {
