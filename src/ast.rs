@@ -4,7 +4,7 @@ pub struct Program {
 }
 pub enum Statement {
     Expr(Box<Expr>),
-    Assign(String, Box<Expr>),
+    Assign(u32, Box<Expr>),
 }
 pub enum Expr {
     ArithExpr(Box<ArithExpr>),
@@ -33,27 +33,44 @@ pub enum Unary {
 pub enum Atom {
     Number(i32),
     Expr(Box<Expr>),
+    Variable(u32),
 }
 
 pub fn print_assembly(program: Box<Program>) {
+    let number_of_variables = 1;
     println!(".intel_syntax noprefix");
     println!(".global main\n");
     println!("main:");
+    println!("  push rbp");
+    println!("  mov rbp, rsp");
+    println!("  sub rsp, {}", 8 * number_of_variables);
     for statement in program.statements {
         print_assembly_statement(Box::new(statement));
+        println!("  pop rax");
     }
-    println!("  pop rax");
+    println!("  mov rsp, rbp");
+    println!("  pop rbp");
     println!("  ret");
 }
 
 pub fn print_assembly_statement(statement: Box<Statement>) {
     match *statement {
         Statement::Expr(expr) => print_assembly_expr(expr),
-        Statement::Assign(_, expr) => {
-            eprintln!("Warning: Assign statement is not implemented");
+        Statement::Assign(left, expr) => {
+            print_assembly_lval(left);
             print_assembly_expr(expr);
+            println!("  pop rdi");
+            println!("  pop rax");
+            println!("  mov [rax], rdi");
+            println!("  push rdi");
         }
     }
+}
+
+fn print_assembly_lval(lval: u32) {
+    println!("  mov rax, rbp");
+    println!("  sub rax, {}", (lval + 1) * 8);
+    println!("  push rax");
 }
 
 fn print_assembly_expr(expr: Box<Expr>) {
@@ -138,5 +155,10 @@ fn print_assembly_atom(atom: Box<Atom>) {
     match *atom {
         Atom::Number(n) => println!("  push {}", n),
         Atom::Expr(expr) => print_assembly_expr(expr),
+        Atom::Variable(lval) => {
+            println!("  mov rax, rbp");
+            println!("  sub rax, {}", (lval + 1) * 8);
+            println!("  push [rax]");
+        }
     }
 }

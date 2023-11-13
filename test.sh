@@ -47,4 +47,6 @@ assert 1 '2>=-1;'
 assert 0 '-2>=-1;'
 assert 1 '-1>=-1;'
 
+assert 3 'a=1;a+2;'
+
 echo OK

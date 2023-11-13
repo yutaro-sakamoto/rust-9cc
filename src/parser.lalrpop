@@ -11,6 +11,10 @@ Statement: Statement = {
     <Expr> ";" => Statement::Expr(Box::new(<>)),
 }
 
+Identifier: u32 = {
+    r"[a-zA-Z_][a-zA-Z0-9_]*" => String::from_str(<>).unwrap().chars().nth(0).unwrap() as u32 - 'a' as u32,
+}
+
 Expr: Expr = {
     <ArithExpr> => Expr::ArithExpr(Box::new(<>)),
     <left:ArithExpr> "==" <right:ArithExpr> => Expr::Equal(Box::new(left), Box::new(right)),
@@ -42,8 +46,5 @@ Unary: Unary = {
 Atom: Atom = {
     r"[0-9]+" => Atom::Number(i32::from_str(<>).unwrap()),
     "(" <expr:Expr> ")" => Atom::Expr(Box::new(expr)),
-}
-
-Identifier: String = {
-    r"[a-zA-Z_][a-zA-Z0-9_]*" => String::from_str(<>).unwrap(),
+    r"[a-zA-Z_][a-zA-Z0-9_]*" => Atom::Variable(String::from_str(<>).unwrap().chars().nth(0).unwrap() as u32 - 'a' as u32),
 }
