@@ -19,7 +19,10 @@ fn main() -> Result<(), CompilerError> {
         return Err(CompilerError::InvalidNumberOfArguments);
     }
     match parser::ProgramParser::new().parse(&args[1]) {
-        Ok(parse_tree) => print_assembly(Box::new(parse_tree)),
+        Ok(parse_tree) => {
+            let mut meta_info = MetaInfo::new();
+            print_assembly(Box::new(parse_tree), &mut meta_info);
+        }
         Err(e) => {
             eprintln!("Failed to parse: {}", e);
             return Err(CompilerError::InvalidExpression);
