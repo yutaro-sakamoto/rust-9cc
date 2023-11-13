@@ -49,6 +49,7 @@ assert 1 '-1>=-1;'
 
 assert 3 'a=1;a+2;'
 assert 3 'a=1;b=2;a+b;'
-assert 9 'a=1;b=2;c=a+b;(a+b)*c;'
+assert 9 'aa=1;bbb=2;cccc=aa+bbb;(aa+bbb)*cccc;'
+assert 9 'aa = 1; bbb = 2; cccc= aa + bbb; (aa + bbb) * cccc;'
 
 echo OK
