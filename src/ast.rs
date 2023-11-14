@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::vec::Vec;
+
 pub struct Program {
     pub statements: Vec<Statement>,
 }

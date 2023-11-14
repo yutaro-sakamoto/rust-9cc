@@ -1,5 +1,5 @@
 RUST_9CC = target/release/rust-9cc
-SRC = src/main.rs src/ast.rs
+SRC = src/main.rs src/ast.rs src/assembly.rs
 TEMP_FILES = tmp tmp.s
 
 all: $(RUST_9CC)

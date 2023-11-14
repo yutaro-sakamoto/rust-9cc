@@ -2,6 +2,7 @@
 extern crate lalrpop_util;
 
 lalrpop_mod!(pub parser);
+pub mod assembly;
 pub mod ast;
 use crate::ast::*;
 use std::env;
