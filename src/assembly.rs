@@ -2,6 +2,12 @@ use std::fmt;
 
 pub type Assembly = Vec<Instruction>;
 
+pub fn print_assembly_code(assembly: &Assembly) {
+    for instruction in assembly {
+        println!("  {:?}", instruction);
+    }
+}
+
 #[derive(Clone, Copy)]
 pub enum Instruction {
     Push(Operand),
@@ -9,17 +15,17 @@ pub enum Instruction {
     Ret,
     Add(Operand, Operand),
     Sub(Operand, Operand),
-    Mul(Operand, Operand),
+    Mul(Operand),
     Idiv(Operand),
     Neg(Operand),
-    Cpo,
+    Cqo,
     Movzb(Operand, Operand),
     Mov(Operand, Operand),
     Cmp(Operand, Operand),
-    Sete(Operand, Operand),
-    Setne(Operand, Operand),
-    Setl(Operand, Operand),
-    Setle(Operand, Operand),
+    Sete(Operand),
+    Setne(Operand),
+    Setl(Operand),
+    Setle(Operand),
 }
 
 impl fmt::Debug for Instruction {
@@ -30,17 +36,17 @@ impl fmt::Debug for Instruction {
             Instruction::Ret => write!(f, "ret"),
             Instruction::Add(o1, o2) => write!(f, "add {:?}, {:?}", o1, o2),
             Instruction::Sub(o1, o2) => write!(f, "sub {:?}, {:?}", o1, o2),
-            Instruction::Mul(o1, o2) => write!(f, "mul {:?}, {:?}", o1, o2),
+            Instruction::Mul(o) => write!(f, "mul {:?}", o),
             Instruction::Idiv(o) => write!(f, "idiv {:?}", o),
             Instruction::Neg(o) => write!(f, "neg {:?}", o),
-            Instruction::Cpo => write!(f, "cpo"),
+            Instruction::Cqo => write!(f, "cqo"),
             Instruction::Movzb(o1, o2) => write!(f, "movzb {:?}, {:?}", o1, o2),
             Instruction::Mov(o1, o2) => write!(f, "mov {:?}, {:?}", o1, o2),
             Instruction::Cmp(o1, o2) => write!(f, "cmp {:?}, {:?}", o1, o2),
-            Instruction::Sete(o1, o2) => write!(f, "sete {:?}, {:?}", o1, o2),
-            Instruction::Setne(o1, o2) => write!(f, "setne {:?}, {:?}", o1, o2),
-            Instruction::Setl(o1, o2) => write!(f, "setl {:?}, {:?}", o1, o2),
-            Instruction::Setle(o1, o2) => write!(f, "setle {:?}, {:?}", o1, o2),
+            Instruction::Sete(o) => write!(f, "sete {:?}", o),
+            Instruction::Setne(o) => write!(f, "setne {:?}", o),
+            Instruction::Setl(o) => write!(f, "setl {:?}", o),
+            Instruction::Setle(o) => write!(f, "setle {:?}", o),
         }
     }
 }
@@ -65,6 +71,7 @@ impl fmt::Debug for Operand {
 #[derive(Clone, Copy)]
 pub enum Register {
     RAX,
+    RBP,
     RDI,
     RSI,
     RDX,
@@ -77,12 +84,14 @@ pub enum Register {
     R13,
     R14,
     R15,
+    AL,
 }
 
 impl fmt::Debug for Register {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Register::RAX => write!(f, "rax"),
+            Register::RBP => write!(f, "rbp"),
             Register::RDI => write!(f, "rdi"),
             Register::RSI => write!(f, "rsi"),
             Register::RDX => write!(f, "rdx"),
@@ -95,6 +104,7 @@ impl fmt::Debug for Register {
             Register::R13 => write!(f, "r13"),
             Register::R14 => write!(f, "r14"),
             Register::R15 => write!(f, "r15"),
+            Register::AL => write!(f, "al"),
         }
     }
 }
