@@ -63,7 +63,7 @@ pub fn print_assembly(program: Box<Program>, meta_info: &mut MetaInfo) {
     let mut assembly: Assembly = Vec::new();
     for statement in program.statements {
         assembly.append(&mut get_assembly_statement(Box::new(statement), meta_info));
-        assembly.push(Instruction::Pop(Operand::Register(Register::RAX)));
+        assembly.push(pop(rax()));
     }
     print_assembly_code(&assembly);
     println!("  mov rsp, rbp");
@@ -78,13 +78,10 @@ pub fn get_assembly_statement(statement: Box<Statement>, meta_info: &mut MetaInf
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_lval(left, meta_info));
             assembly.append(&mut get_assembly_expr(expr, meta_info));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RDI)));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RAX)));
-            assembly.push(Instruction::Mov(
-                Operand::Memory(Register::RAX),
-                Operand::Register(Register::RDI),
-            ));
-            assembly.push(Instruction::Push(Operand::Register(Register::RDI)));
+            assembly.push(pop(rdi()));
+            assembly.push(pop(rax()));
+            assembly.push(mov(m_rax(), rdi()));
+            assembly.push(push(rdi()));
             assembly
         }
     }
@@ -106,39 +103,32 @@ fn get_variable_id_and_register_it(lval: &String, meta_info: &mut MetaInfo) -> u
 fn get_assembly_lval(lval: String, meta_info: &mut MetaInfo) -> Assembly {
     let id = get_variable_id_and_register_it(&lval, meta_info);
     let mut assembly: Assembly = Vec::new();
-    assembly.push(Instruction::Mov(
-        Operand::Register(Register::RAX),
-        Operand::Register(Register::RBP),
-    ));
-    assembly.push(Instruction::Sub(
-        Operand::Register(Register::RAX),
-        Operand::Immediate((id + 1) as i32 * 8),
-    ));
-    assembly.push(Instruction::Push(Operand::Register(Register::RAX)));
+    assembly.push(mov(rax(), rbp()));
+    assembly.push(sub(rax(), immediate((id + 1) as i32 * 8)));
+    assembly.push(push(rax()));
     assembly
 }
 
 fn get_assembly_expr(expr: Box<Expr>, meta_info: &mut MetaInfo) -> Assembly {
     match *expr {
         Expr::ArithExpr(arith_expr) => get_assembly_arith_expr(arith_expr, meta_info),
-        //Expr::Equal(left, right) => get_compare_instruction("sete", left, right, meta_info),
         Expr::Equal(left, right) => {
-            get_compare_instruction(&|o: Operand| Instruction::Sete(o), left, right, meta_info)
+            get_compare_instruction(&|o: Operand| sete(o), left, right, meta_info)
         }
         Expr::NotEqual(left, right) => {
-            get_compare_instruction(&|o: Operand| Instruction::Setne(o), left, right, meta_info)
+            get_compare_instruction(&|o: Operand| setne(o), left, right, meta_info)
         }
         Expr::Less(left, right) => {
-            get_compare_instruction(&|o: Operand| Instruction::Setl(o), left, right, meta_info)
+            get_compare_instruction(&|o: Operand| setl(o), left, right, meta_info)
         }
         Expr::LessOrEqual(left, right) => {
-            get_compare_instruction(&|o: Operand| Instruction::Setle(o), left, right, meta_info)
+            get_compare_instruction(&|o: Operand| setle(o), left, right, meta_info)
         }
     }
 }
 
 fn get_compare_instruction(
-    instruction: &dyn Fn(Operand) -> Instruction,
+    gen_instruction: &dyn Fn(Operand) -> Instruction,
     left: Box<ArithExpr>,
     right: Box<ArithExpr>,
     meta_info: &mut MetaInfo,
@@ -146,18 +136,12 @@ fn get_compare_instruction(
     let mut assembly: Assembly = Vec::new();
     assembly.append(&mut get_assembly_arith_expr(left, meta_info));
     assembly.append(&mut get_assembly_arith_expr(right, meta_info));
-    assembly.push(Instruction::Pop(Operand::Register(Register::RDI)));
-    assembly.push(Instruction::Pop(Operand::Register(Register::RAX)));
-    assembly.push(Instruction::Cmp(
-        Operand::Register(Register::RAX),
-        Operand::Register(Register::RDI),
-    ));
-    assembly.push(instruction(Operand::Register(Register::AL)));
-    assembly.push(Instruction::Movzb(
-        Operand::Register(Register::RAX),
-        Operand::Register(Register::AL),
-    ));
-    assembly.push(Instruction::Push(Operand::Register(Register::RAX)));
+    assembly.push(pop(rdi()));
+    assembly.push(pop(rax()));
+    assembly.push(cmp(rax(), rdi()));
+    assembly.push(gen_instruction(al()));
+    assembly.push(movzb(rax(), al()));
+    assembly.push(push(rax()));
     assembly
 }
 
@@ -168,26 +152,20 @@ fn get_assembly_arith_expr(expr: Box<ArithExpr>, meta_info: &mut MetaInfo) -> As
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_arith_expr(expr, meta_info));
             assembly.append(&mut get_assembly_factor(factor, meta_info));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RDI)));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RAX)));
-            assembly.push(Instruction::Add(
-                Operand::Register(Register::RAX),
-                Operand::Register(Register::RDI),
-            ));
-            assembly.push(Instruction::Push(Operand::Register(Register::RAX)));
+            assembly.push(pop(rdi()));
+            assembly.push(pop(rax()));
+            assembly.push(add(rax(), rdi()));
+            assembly.push(push(rax()));
             assembly
         }
         ArithExpr::Sub(expr, factor) => {
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_arith_expr(expr, meta_info));
             assembly.append(&mut get_assembly_factor(factor, meta_info));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RDI)));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RAX)));
-            assembly.push(Instruction::Sub(
-                Operand::Register(Register::RAX),
-                Operand::Register(Register::RDI),
-            ));
-            assembly.push(Instruction::Push(Operand::Register(Register::RAX)));
+            assembly.push(pop(rdi()));
+            assembly.push(pop(rax()));
+            assembly.push(sub(rax(), rdi()));
+            assembly.push(push(rax()));
             assembly
         }
     }
@@ -200,21 +178,21 @@ fn get_assembly_factor(factor: Box<Factor>, meta_info: &mut MetaInfo) -> Assembl
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_factor(factor, meta_info));
             assembly.append(&mut get_assembly_unary(unary, meta_info));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RDI)));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RAX)));
-            assembly.push(Instruction::Mul(Operand::Register(Register::RDI)));
-            assembly.push(Instruction::Push(Operand::Register(Register::RAX)));
+            assembly.push(pop(rdi()));
+            assembly.push(pop(rax()));
+            assembly.push(mul(rdi()));
+            assembly.push(push(rax()));
             assembly
         }
         Factor::Div(factor, unary) => {
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_factor(factor, meta_info));
             assembly.append(&mut get_assembly_unary(unary, meta_info));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RDI)));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RAX)));
-            assembly.push(Instruction::Cqo);
-            assembly.push(Instruction::Idiv(Operand::Register(Register::RDI)));
-            assembly.push(Instruction::Push(Operand::Register(Register::RAX)));
+            assembly.push(pop(rdi()));
+            assembly.push(pop(rax()));
+            assembly.push(cqo());
+            assembly.push(idiv(rdi()));
+            assembly.push(push(rax()));
             assembly
         }
     }
@@ -226,9 +204,9 @@ fn get_assembly_unary(unary: Box<Unary>, meta_info: &mut MetaInfo) -> Assembly {
         Unary::Neg(atom) => {
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_atom(atom, meta_info));
-            assembly.push(Instruction::Pop(Operand::Register(Register::RAX)));
-            assembly.push(Instruction::Neg(Operand::Register(Register::RAX)));
-            assembly.push(Instruction::Push(Operand::Register(Register::RAX)));
+            assembly.push(pop(rax()));
+            assembly.push(neg(rax()));
+            assembly.push(push(rax()));
             assembly
         }
     }
@@ -241,15 +219,9 @@ fn get_assembly_atom(atom: Box<Atom>, meta_info: &mut MetaInfo) -> Assembly {
         Atom::Variable(lval) => {
             let mut assembly: Assembly = Vec::new();
             let id = get_variable_id_and_register_it(&lval, meta_info);
-            assembly.push(Instruction::Mov(
-                Operand::Register(Register::RAX),
-                Operand::Register(Register::RBP),
-            ));
-            assembly.push(Instruction::Sub(
-                Operand::Register(Register::RAX),
-                Operand::Immediate((id + 1) as i32 * 8),
-            ));
-            assembly.push(Instruction::Push(Operand::Memory(Register::RAX)));
+            assembly.push(mov(rax(), rbp()));
+            assembly.push(sub(rax(), immediate((id + 1) as i32 * 8)));
+            assembly.push(push(m_rax()));
             assembly
         }
     }
