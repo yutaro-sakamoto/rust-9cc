@@ -53,22 +53,23 @@ impl MetaInfo {
 }
 
 pub fn print_assembly(program: Box<Program>, meta_info: &mut MetaInfo) {
-    let number_of_variables = 16;
     println!(".intel_syntax noprefix");
     println!(".global main\n");
     println!("main:");
-    println!("  push rbp");
-    println!("  mov rbp, rsp");
-    println!("  sub rsp, {}", 8 * number_of_variables);
-    let mut assembly: Assembly = Vec::new();
+    let header_code = vec![push(rbp()), mov(rbp(), rsp())];
+    let mut main_code: Assembly = Vec::new();
     for statement in program.statements {
-        assembly.append(&mut get_assembly_statement(Box::new(statement), meta_info));
-        assembly.push(pop(rax()));
+        main_code.append(&mut get_assembly_statement(Box::new(statement), meta_info));
+        main_code.push(pop(rax()));
     }
-    print_assembly_code(&assembly);
-    println!("  mov rsp, rbp");
-    println!("  pop rbp");
-    println!("  ret");
+    let number_of_variables = meta_info.variable_map.len() as i32;
+    let sub_rsp_code = sub(rsp(), immediate(8 * number_of_variables));
+    let footer_code = vec![mov(rsp(), rbp()), pop(rbp()), ret()];
+
+    print_assembly_code(&header_code);
+    print_single_instruction(&sub_rsp_code);
+    print_assembly_code(&main_code);
+    print_assembly_code(&footer_code);
 }
 
 pub fn get_assembly_statement(statement: Box<Statement>, meta_info: &mut MetaInfo) -> Assembly {

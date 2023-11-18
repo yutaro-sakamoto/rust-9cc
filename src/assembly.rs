@@ -4,8 +4,12 @@ pub type Assembly = Vec<Instruction>;
 
 pub fn print_assembly_code(assembly: &Assembly) {
     for instruction in assembly {
-        println!("  {:?}", instruction);
+        print_single_instruction(instruction);
     }
+}
+
+pub fn print_single_instruction(instruction: &Instruction) {
+    println!("  {:?}", instruction);
 }
 
 #[derive(Clone, Copy)]
@@ -144,6 +148,7 @@ pub enum Register {
     RSI,
     RDX,
     RCX,
+    RSP,
     R8,
     R9,
     R10,
@@ -164,6 +169,7 @@ impl fmt::Debug for Register {
             Register::RSI => write!(f, "rsi"),
             Register::RDX => write!(f, "rdx"),
             Register::RCX => write!(f, "rcx"),
+            Register::RSP => write!(f, "rsp"),
             Register::R8 => write!(f, "r8"),
             Register::R9 => write!(f, "r9"),
             Register::R10 => write!(f, "r10"),
@@ -223,6 +229,14 @@ pub fn rcx() -> Operand {
 
 pub fn m_rcx() -> Operand {
     Operand::Memory(Register::RCX)
+}
+
+pub fn rsp() -> Operand {
+    Operand::Register(Register::RSP)
+}
+
+pub fn m_rsp() -> Operand {
+    Operand::Memory(Register::RSP)
 }
 
 pub fn r8() -> Operand {
