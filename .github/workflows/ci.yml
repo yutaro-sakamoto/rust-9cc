@@ -42,7 +42,7 @@ jobs:
         cargo build
 
     - name: Unit Test
-      run: cargo llvm-cov
+      run: make utest
 
     - name: Integration Test
       run: make test
