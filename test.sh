@@ -1,5 +1,5 @@
 #!/bin/bash
-RUST_9CC=target/release/rust-9cc
+RUST_9CC=target/debug/rust-9cc
 assert() {
     expected="$1"
     input="$2"

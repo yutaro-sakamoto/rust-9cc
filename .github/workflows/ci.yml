@@ -11,6 +11,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Install Rust
+      run: rustup update stable
+
     - uses: actions/cache@v3
       with:
         path: |
@@ -18,11 +21,6 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Install llvm-tools-preview
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        components: llvm-tools-preview
 
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
@@ -39,8 +37,9 @@ jobs:
       run: |
         cargo clippy
 
-    - name: Build
-      run: cargo build
+    - name: Builds
+      run: |
+        cargo build
 
     - name: Unit Test
       run: cargo llvm-cov
