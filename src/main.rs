@@ -1,7 +1,11 @@
 #[macro_use]
 extern crate lalrpop_util;
 
-lalrpop_mod!(pub parser);
+lalrpop_mod!(
+    #[allow(clippy::all)]
+    #[allow(unused)]
+    pub parser
+);
 pub mod assembly;
 pub mod ast;
 use crate::ast::*;
