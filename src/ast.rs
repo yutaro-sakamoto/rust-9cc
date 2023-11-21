@@ -52,14 +52,20 @@ impl MetaInfo {
     }
 }
 
-pub fn print_assembly(program: Box<Program>, meta_info: &mut MetaInfo) {
+impl Default for MetaInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub fn print_assembly(program: &Program, meta_info: &mut MetaInfo) {
     println!(".intel_syntax noprefix");
     println!(".global main\n");
     println!("main:");
     let header_code = vec![push(rbp()), mov(rbp(), rsp())];
     let mut main_code: Assembly = Vec::new();
-    for statement in program.statements {
-        main_code.append(&mut get_assembly_statement(Box::new(statement), meta_info));
+    for statement in program.statements.iter() {
+        main_code.append(&mut get_assembly_statement(statement, meta_info));
         main_code.push(pop(rax()));
     }
     let number_of_variables = meta_info.variable_map.len() as i32;
@@ -72,8 +78,8 @@ pub fn print_assembly(program: Box<Program>, meta_info: &mut MetaInfo) {
     print_assembly_code(&footer_code);
 }
 
-pub fn get_assembly_statement(statement: Box<Statement>, meta_info: &mut MetaInfo) -> Assembly {
-    match *statement {
+pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -> Assembly {
+    match statement {
         Statement::Expr(expr) => get_assembly_expr(expr, meta_info),
         Statement::Assign(left, expr) => {
             let mut assembly: Assembly = Vec::new();
@@ -101,13 +107,13 @@ fn get_variable_id_and_register_it(lval: &String, meta_info: &mut MetaInfo) -> u
     }
 }
 
-fn get_assembly_lval(lval: String, meta_info: &mut MetaInfo) -> Assembly {
-    let id = get_variable_id_and_register_it(&lval, meta_info);
-    let mut assembly: Assembly = Vec::new();
-    assembly.push(mov(rax(), rbp()));
-    assembly.push(sub(rax(), immediate((id + 1) as i32 * 8)));
-    assembly.push(push(rax()));
-    assembly
+fn get_assembly_lval(lval: &String, meta_info: &mut MetaInfo) -> Assembly {
+    let id = get_variable_id_and_register_it(lval, meta_info);
+    vec![
+        mov(rax(), rbp()),
+        sub(rax(), immediate((id + 1) as i32 * 8)),
+        push(rax()),
+    ]
 }
 
 #[cfg(test)]
@@ -129,8 +135,8 @@ mod tests {
     }
 }
 
-fn get_assembly_expr(expr: Box<Expr>, meta_info: &mut MetaInfo) -> Assembly {
-    match *expr {
+fn get_assembly_expr(expr: &Expr, meta_info: &mut MetaInfo) -> Assembly {
+    match expr {
         Expr::ArithExpr(arith_expr) => get_assembly_arith_expr(arith_expr, meta_info),
         Expr::Equal(left, right) => {
             get_compare_instruction(&|o: Operand| sete(o), left, right, meta_info)
@@ -149,8 +155,8 @@ fn get_assembly_expr(expr: Box<Expr>, meta_info: &mut MetaInfo) -> Assembly {
 
 fn get_compare_instruction(
     gen_instruction: &dyn Fn(Operand) -> Instruction,
-    left: Box<ArithExpr>,
-    right: Box<ArithExpr>,
+    left: &ArithExpr,
+    right: &ArithExpr,
     meta_info: &mut MetaInfo,
 ) -> Assembly {
     let mut assembly: Assembly = Vec::new();
@@ -165,8 +171,8 @@ fn get_compare_instruction(
     assembly
 }
 
-fn get_assembly_arith_expr(expr: Box<ArithExpr>, meta_info: &mut MetaInfo) -> Assembly {
-    match *expr {
+fn get_assembly_arith_expr(expr: &ArithExpr, meta_info: &mut MetaInfo) -> Assembly {
+    match expr {
         ArithExpr::Factor(factor) => get_assembly_factor(factor, meta_info),
         ArithExpr::Add(expr, factor) => {
             let mut assembly: Assembly = Vec::new();
@@ -191,8 +197,8 @@ fn get_assembly_arith_expr(expr: Box<ArithExpr>, meta_info: &mut MetaInfo) -> As
     }
 }
 
-fn get_assembly_factor(factor: Box<Factor>, meta_info: &mut MetaInfo) -> Assembly {
-    match *factor {
+fn get_assembly_factor(factor: &Factor, meta_info: &mut MetaInfo) -> Assembly {
+    match factor {
         Factor::Unary(unary) => get_assembly_unary(unary, meta_info),
         Factor::Mul(factor, unary) => {
             let mut assembly: Assembly = Vec::new();
@@ -218,8 +224,8 @@ fn get_assembly_factor(factor: Box<Factor>, meta_info: &mut MetaInfo) -> Assembl
     }
 }
 
-fn get_assembly_unary(unary: Box<Unary>, meta_info: &mut MetaInfo) -> Assembly {
-    match *unary {
+fn get_assembly_unary(unary: &Unary, meta_info: &mut MetaInfo) -> Assembly {
+    match unary {
         Unary::Atom(atom) => get_assembly_atom(atom, meta_info),
         Unary::Neg(atom) => {
             let mut assembly: Assembly = Vec::new();
@@ -232,13 +238,13 @@ fn get_assembly_unary(unary: Box<Unary>, meta_info: &mut MetaInfo) -> Assembly {
     }
 }
 
-fn get_assembly_atom(atom: Box<Atom>, meta_info: &mut MetaInfo) -> Assembly {
-    match *atom {
-        Atom::Number(n) => vec![Instruction::Push(Operand::Immediate(n))],
+fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Assembly {
+    match atom {
+        Atom::Number(n) => vec![Instruction::Push(Operand::Immediate(*n))],
         Atom::Expr(expr) => get_assembly_expr(expr, meta_info),
         Atom::Variable(lval) => {
             let mut assembly: Assembly = Vec::new();
-            let id = get_variable_id_and_register_it(&lval, meta_info);
+            let id = get_variable_id_and_register_it(lval, meta_info);
             assembly.push(mov(rax(), rbp()));
             assembly.push(sub(rax(), immediate((id + 1) as i32 * 8)));
             assembly.push(push(m_rax()));
