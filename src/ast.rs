@@ -110,6 +110,25 @@ fn get_assembly_lval(lval: String, meta_info: &mut MetaInfo) -> Assembly {
     assembly
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_get_variable_id_and_register_it() {
+        let mut meta_info = MetaInfo::new();
+        let a_id = get_variable_id_and_register_it(&"a".to_string(), &mut meta_info);
+        let b_id = get_variable_id_and_register_it(&"b".to_string(), &mut meta_info);
+        assert_eq!(
+            get_variable_id_and_register_it(&"a".to_string(), &mut meta_info),
+            a_id
+        );
+        assert_eq!(
+            get_variable_id_and_register_it(&"b".to_string(), &mut meta_info),
+            b_id
+        );
+    }
+}
+
 fn get_assembly_expr(expr: Box<Expr>, meta_info: &mut MetaInfo) -> Assembly {
     match *expr {
         Expr::ArithExpr(arith_expr) => get_assembly_arith_expr(arith_expr, meta_info),
