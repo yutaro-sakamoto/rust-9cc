@@ -6,13 +6,21 @@ LCOV_FILE = lcov.info
 
 all: $(RUST_9CC)
 
-# Run Integration tests
-test:
+define run_external_test
 	source <(cargo llvm-cov show-env --export-prefix) &&\
 	cargo llvm-cov clean --workspace &&\
 	cargo build &&\
 	./test.sh &&\
-	cargo llvm-cov report --lcov --output-path $(LCOV_FILE)
+	$(SHELL) <(echo $(1))
+endef
+
+# Run Integration tests
+test:
+	$(call run_external_test,'cargo llvm-cov report --fail-under-regions 100')
+
+# Run Integration tests and generate a lcov file
+test-lcov:
+	$(call run_external_test,"cargo llvm-cov report --lcov --output-path $(LCOV_FILE)")
 
 # Run unit tests
 utest:

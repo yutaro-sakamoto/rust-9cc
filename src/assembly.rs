@@ -12,7 +12,6 @@ pub fn print_single_instruction(instruction: &Instruction) {
     println!("  {:?}", instruction);
 }
 
-#[derive(Clone, Copy)]
 pub enum Instruction {
     Push(Operand),
     Pop(Operand),
@@ -119,7 +118,6 @@ pub fn setle(operand: Operand) -> Instruction {
     Instruction::Setle(operand)
 }
 
-#[derive(Clone, Copy)]
 pub enum Operand {
     Register(Register),
     Immediate(i32),
@@ -140,23 +138,11 @@ impl fmt::Debug for Operand {
     }
 }
 
-#[derive(Clone, Copy)]
 pub enum Register {
     RAX,
     RBP,
     RDI,
-    RSI,
-    RDX,
-    RCX,
     RSP,
-    R8,
-    R9,
-    R10,
-    R11,
-    R12,
-    R13,
-    R14,
-    R15,
     AL,
 }
 
@@ -166,18 +152,7 @@ impl fmt::Debug for Register {
             Register::RAX => write!(f, "rax"),
             Register::RBP => write!(f, "rbp"),
             Register::RDI => write!(f, "rdi"),
-            Register::RSI => write!(f, "rsi"),
-            Register::RDX => write!(f, "rdx"),
-            Register::RCX => write!(f, "rcx"),
             Register::RSP => write!(f, "rsp"),
-            Register::R8 => write!(f, "r8"),
-            Register::R9 => write!(f, "r9"),
-            Register::R10 => write!(f, "r10"),
-            Register::R11 => write!(f, "r11"),
-            Register::R12 => write!(f, "r12"),
-            Register::R13 => write!(f, "r13"),
-            Register::R14 => write!(f, "r14"),
-            Register::R15 => write!(f, "r15"),
             Register::AL => write!(f, "al"),
         }
     }
@@ -195,118 +170,14 @@ pub fn rbp() -> Operand {
     Operand::Register(Register::RBP)
 }
 
-pub fn m_rbp() -> Operand {
-    Operand::Memory(Register::RBP)
-}
-
 pub fn rdi() -> Operand {
     Operand::Register(Register::RDI)
-}
-
-pub fn m_rdi() -> Operand {
-    Operand::Memory(Register::RDI)
-}
-
-pub fn rsi() -> Operand {
-    Operand::Register(Register::RSI)
-}
-
-pub fn m_rsi() -> Operand {
-    Operand::Memory(Register::RSI)
-}
-
-pub fn rdx() -> Operand {
-    Operand::Register(Register::RDX)
-}
-
-pub fn m_rdx() -> Operand {
-    Operand::Memory(Register::RDX)
-}
-
-pub fn rcx() -> Operand {
-    Operand::Register(Register::RCX)
-}
-
-pub fn m_rcx() -> Operand {
-    Operand::Memory(Register::RCX)
 }
 
 pub fn rsp() -> Operand {
     Operand::Register(Register::RSP)
 }
 
-pub fn m_rsp() -> Operand {
-    Operand::Memory(Register::RSP)
-}
-
-pub fn r8() -> Operand {
-    Operand::Register(Register::R8)
-}
-
-pub fn m_r8() -> Operand {
-    Operand::Memory(Register::R8)
-}
-
-pub fn r9() -> Operand {
-    Operand::Register(Register::R9)
-}
-
-pub fn m_r9() -> Operand {
-    Operand::Memory(Register::R9)
-}
-
-pub fn r10() -> Operand {
-    Operand::Register(Register::R10)
-}
-
-pub fn m_r10() -> Operand {
-    Operand::Memory(Register::R10)
-}
-
-pub fn r11() -> Operand {
-    Operand::Register(Register::R11)
-}
-
-pub fn m_r11() -> Operand {
-    Operand::Memory(Register::R11)
-}
-
-pub fn r12() -> Operand {
-    Operand::Register(Register::R12)
-}
-
-pub fn m_r12() -> Operand {
-    Operand::Memory(Register::R12)
-}
-
-pub fn r13() -> Operand {
-    Operand::Register(Register::R13)
-}
-
-pub fn m_r13() -> Operand {
-    Operand::Memory(Register::R13)
-}
-
-pub fn r14() -> Operand {
-    Operand::Register(Register::R14)
-}
-
-pub fn m_r14() -> Operand {
-    Operand::Memory(Register::R14)
-}
-
-pub fn r15() -> Operand {
-    Operand::Register(Register::R15)
-}
-
-pub fn m_r15() -> Operand {
-    Operand::Memory(Register::R15)
-}
-
 pub fn al() -> Operand {
     Operand::Register(Register::AL)
-}
-
-pub fn m_al() -> Operand {
-    Operand::Memory(Register::AL)
 }
