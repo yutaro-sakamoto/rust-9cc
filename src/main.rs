@@ -25,7 +25,7 @@ fn main() -> Result<(), CompilerError> {
     }
     match parser::ProgramParser::new().parse(&args[1]) {
         Ok(parse_tree) => {
-            let mut meta_info = MetaInfo::new();
+            let mut meta_info = MetaInfo::default();
             print_assembly(&parse_tree, &mut meta_info);
         }
         Err(e) => {
