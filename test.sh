@@ -2,6 +2,22 @@
 RUST_9CC=target/debug/rust-9cc
 assert() {
     expected="$1"
+    command="${@:2}"
+    if [ "$command" = "" ]; then
+      echo "command is empty"
+      exit 1
+    fi
+    ${command}
+    if [ "$?" = "$expected" ]; then
+      echo "$command => $expected"
+    else
+      echo "$command => $expected expected, but got $?"
+      exit 1
+    fi
+}
+
+assert_program() {
+    expected="$1"
     input="$2"
 
     ${RUST_9CC} "$input" > tmp.s
@@ -17,39 +33,47 @@ assert() {
     fi
 }
 
-assert 17 '5+20-4*2;'
-assert 7 '6/2+2*(1+1);'
-assert 7 '-5+20-4*2;'
-assert 1 '6/(-2)+2*(1+1);'
-assert 1 '6/-2+2*(1+1);'
+# test the format of command line arguments
+assert 1 ${RUST_9CC}
+assert 1 ${RUST_9CC} 'first argument' 'second argument'
+
+# test the invalid program format
+assert_program 127 '$y-0'
+
+# test basic arithmetics
+assert_program 17 '5+20-4*2;'
+assert_program 7 '6/2+2*(1+1);'
+assert_program 7 '-5+20-4*2;'
+assert_program 1 '6/(-2)+2*(1+1);'
+assert_program 1 '6/-2+2*(1+1);'
 
 # comparison test
 
-assert 1 '1==1;'
-assert 0 '1==2;'
+assert_program 1 '1==1;'
+assert_program 0 '1==2;'
 
-assert 1 '1!=2;'
-assert 0 '1!=1;'
+assert_program 1 '1!=2;'
+assert_program 0 '1!=1;'
 
-assert 1 '-1<2;'
-assert 0 '-1<-2;'
-assert 0 '-1<-1;'
+assert_program 1 '-1<2;'
+assert_program 0 '-1<-2;'
+assert_program 0 '-1<-1;'
 
-assert 1 '2>-1;'
-assert 0 '-2>-1;'
-assert 0 '-1>-1;'
+assert_program 1 '2>-1;'
+assert_program 0 '-2>-1;'
+assert_program 0 '-1>-1;'
 
-assert 1 '-1<=2;'
-assert 0 '-1<=-2;'
-assert 1 '-1<=-1;'
+assert_program 1 '-1<=2;'
+assert_program 0 '-1<=-2;'
+assert_program 1 '-1<=-1;'
 
-assert 1 '2>=-1;'
-assert 0 '-2>=-1;'
-assert 1 '-1>=-1;'
+assert_program 1 '2>=-1;'
+assert_program 0 '-2>=-1;'
+assert_program 1 '-1>=-1;'
 
-assert 3 'a=1;a+2;'
-assert 3 'a=1;b=2;a+b;'
-assert 9 'aa=1;bbb=2;cccc=aa+bbb;(aa+bbb)*cccc;'
-assert 9 'aa = 1; bbb = 2; cccc= aa + bbb; (aa + bbb) * cccc;'
+assert_program 3 'a=1;a+2;'
+assert_program 3 'a=1;b=2;a+b;'
+assert_program 9 'aa=1;bbb=2;cccc=aa+bbb;(aa+bbb)*cccc;'
+assert_program 9 'aa = 1; bbb = 2; cccc= aa + bbb; (aa + bbb) * cccc;'
 
 echo OK
