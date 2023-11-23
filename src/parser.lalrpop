@@ -9,6 +9,7 @@ pub Program: Program = {
 Statement: Statement = {
     <identifier: Identifier> "=" <expr: Expr> ";" => Statement::Assign(identifier, Box::new(expr)),
     <Expr> ";" => Statement::Expr(Box::new(<>)),
+    "return" <Expr> ";" => Statement::Return(Box::new(<>)),
 }
 
 Identifier: String = {

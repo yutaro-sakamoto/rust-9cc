@@ -71,9 +71,13 @@ assert_program 1 '2>=-1;'
 assert_program 0 '-2>=-1;'
 assert_program 1 '-1>=-1;'
 
+# test the variable
 assert_program 3 'a=1;a+2;'
 assert_program 3 'a=1;b=2;a+b;'
 assert_program 9 'aa=1;bbb=2;cccc=aa+bbb;(aa+bbb)*cccc;'
 assert_program 9 'aa = 1; bbb = 2; cccc= aa + bbb; (aa + bbb) * cccc;'
 
+# test return statement
+assert_program 3 'return 1 + 2;'
+assert_program 3 'a = 1; b = 2; return a + b;'
 echo OK

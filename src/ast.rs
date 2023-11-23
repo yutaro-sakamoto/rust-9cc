@@ -9,6 +9,7 @@ pub struct Program {
 pub enum Statement {
     Expr(Box<Expr>),
     Assign(String, Box<Expr>),
+    Return(Box<Expr>),
 }
 pub enum Expr {
     ArithExpr(Box<ArithExpr>),
@@ -91,6 +92,11 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
                 mov(m_rax(), rdi()),
                 push(rdi()),
             ]);
+            assembly
+        }
+        Statement::Return(expr) => {
+            let mut assembly: Assembly = get_assembly_expr(expr, meta_info);
+            assembly.append(&mut vec![pop(rax()), mov(rsp(), rbp()), pop(rbp()), ret()]);
             assembly
         }
     }
