@@ -7,7 +7,8 @@ pub enum Statement {
     Expr(Box<Expr>),
     Assign(String, Box<Expr>),
     Return(Box<Expr>),
-    If(Box<Expr>, Box<Statement>, Option<Box<Statement>>),
+    If(Box<Expr>, Box<Statement>, Box<Option<Statement>>),
+    Block(Vec<Statement>),
 }
 pub enum Expr {
     ArithExpr(Box<ArithExpr>),

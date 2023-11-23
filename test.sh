@@ -85,4 +85,10 @@ assert_program 3 'a = 1; b = 2; return a + b;'
 assert_program 3 'a = 1; b = 2; if (b == 2) {a = a + 2;} a;'
 assert_program 3 'a = 1; b = 2; if (b == 2) {a = a + 2;} else { a = a + 3; } a;'
 assert_program 4 'a = 1; b = 2; if (b != 2) {a = a + 2;} else { a = a + 3; } a;'
+
+# test statement blocks
+assert_program 3 '{a = 1; b = 2; a + b;}'
+assert_program 4 'a = 1; b = 2; if (b == 2) {a = a + 2; a = a + 1; } else { a = a + 3; } a;'
+assert_program 5 'a = 1; b = 2; if (b != 2) {a = a + 2;} else { a = a + 3;  a = a + 1; } a;'
+
 echo OK

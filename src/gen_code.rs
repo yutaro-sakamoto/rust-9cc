@@ -87,12 +87,22 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
             assembly.append(&mut vec![pop(rax()), mov(rsp(), rbp()), pop(rbp()), ret()]);
             assembly
         }
+        Statement::Block(statements) => {
+            let mut assembly: Assembly = Vec::new();
+            for (i, statement) in statements.iter().enumerate() {
+                assembly.append(&mut get_assembly_statement(statement, meta_info));
+                if i != statements.len() - 1 {
+                    assembly.push(pop(rax()));
+                }
+            }
+            assembly
+        }
         Statement::If(expr, if_statement, else_statement) => {
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_expr(expr, meta_info));
             assembly.append(&mut vec![pop(rax()), cmp(rax(), immediate(0))]);
-            match else_statement {
-                Some(else_statement) => {
+            match **else_statement {
+                Some(ref else_statement) => {
                     let else_label = meta_info.get_new_label();
                     let end_label = meta_info.get_new_label();
                     assembly.push(je(else_label.clone()));
