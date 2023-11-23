@@ -13,6 +13,8 @@ Statement: Statement = {
     "if" "(" <condition: Expr> ")" <if_block: BlockStatement> <else_block: ElseBlock?> =>
         Statement::If(Box::new(condition), Box::new(if_block), Box::new(else_block)),
     <BlockStatement> => <>,
+    "while" "(" <condition: Expr> ")" <block: BlockStatement> =>
+        Statement::While(Box::new(condition), Box::new(block)),
 }
 
 ElseBlock: Statement = {
