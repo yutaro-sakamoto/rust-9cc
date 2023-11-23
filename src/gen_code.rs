@@ -5,6 +5,7 @@ use std::collections::HashMap;
 pub struct MetaInfo {
     variable_map: HashMap<String, u32>,
     label_count: u64,
+    label_stack_for_break: Vec<String>,
 }
 
 impl MetaInfo {
@@ -12,6 +13,7 @@ impl MetaInfo {
         MetaInfo {
             variable_map: HashMap::new(),
             label_count: 0,
+            label_stack_for_break: Vec::new(),
         }
     }
 
@@ -33,6 +35,18 @@ impl MetaInfo {
     pub fn get_new_label(&mut self) -> String {
         self.label_count += 1;
         format!(".L{}", self.label_count)
+    }
+
+    pub fn push_label_for_break(&mut self, label: String) {
+        self.label_stack_for_break.push(label);
+    }
+
+    pub fn pop_label_for_break(&mut self) -> String {
+        self.label_stack_for_break.pop().unwrap()
+    }
+
+    pub fn get_label_for_break(&mut self) -> String {
+        self.label_stack_for_break.last().unwrap().clone()
     }
 }
 
@@ -125,6 +139,9 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
             let mut assembly: Assembly = Vec::new();
             let start_label = meta_info.get_new_label();
             let end_label = meta_info.get_new_label();
+
+            meta_info.push_label_for_break(end_label.clone());
+
             assembly.push(label(start_label.clone()));
             assembly.append(&mut get_assembly_expr(expr, meta_info));
             assembly.append(&mut vec![
@@ -135,6 +152,9 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
             assembly.append(&mut get_assembly_statement(statement, meta_info));
             assembly.push(jmp(start_label));
             assembly.push(label(end_label));
+
+            meta_info.pop_label_for_break();
+
             assembly
         }
         Statement::For(init, cond, update, statement) => {
@@ -145,6 +165,9 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
             }
             let start_label = meta_info.get_new_label();
             let end_label = meta_info.get_new_label();
+
+            meta_info.push_label_for_break(end_label.clone());
+
             assembly.push(label(start_label.clone()));
             if let Some(ref cond) = **cond {
                 assembly.append(&mut get_assembly_expr(cond, meta_info));
@@ -162,6 +185,16 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
             }
             assembly.push(jmp(start_label));
             assembly.push(label(end_label));
+
+            meta_info.pop_label_for_break();
+
+            assembly
+        }
+        Statement::Break => {
+            let mut assembly: Assembly = Vec::new();
+            let label = meta_info.get_label_for_break();
+            assembly.push(comment("break"));
+            assembly.push(jmp(label.clone()));
             assembly
         }
     }

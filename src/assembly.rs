@@ -32,6 +32,7 @@ pub enum Instruction {
     Je(String),
     Jmp(String),
     Label(String),
+    Comment(String),
 }
 
 impl fmt::Debug for Instruction {
@@ -56,6 +57,7 @@ impl fmt::Debug for Instruction {
             Instruction::Je(label) => write!(f, "je {}", label),
             Instruction::Jmp(label) => write!(f, "jmp {}", label),
             Instruction::Label(label) => write!(f, "{}:", label),
+            Instruction::Comment(comment) => write!(f, "// {}", comment),
         }
     }
 }
@@ -134,6 +136,10 @@ pub fn jmp(label: String) -> Instruction {
 
 pub fn label(label: String) -> Instruction {
     Instruction::Label(label)
+}
+
+pub fn comment(comment: &str) -> Instruction {
+    Instruction::Comment(comment.to_string())
 }
 
 pub enum Operand {

@@ -17,6 +17,7 @@ Statement: Statement = {
         Statement::While(Box::new(condition), Box::new(block)),
     "for" "(" <init: ForInit?> ";" <condition: Expr?> ";" <step: ForStep?> ")" <block: BlockStatement> =>
         Statement::For(Box::new(init), Box::new(condition), Box::new(step), Box::new(block)),
+    "break" ";" => Statement::Break,
 }
 
 AssignStatement: Statement = {

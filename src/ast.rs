@@ -16,6 +16,7 @@ pub enum Statement {
         Box<Option<Statement>>,
         Box<Statement>,
     ),
+    Break,
 }
 pub enum Expr {
     ArithExpr(Box<ArithExpr>),
