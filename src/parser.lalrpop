@@ -10,6 +10,12 @@ Statement: Statement = {
     <identifier: Identifier> "=" <expr: Expr> ";" => Statement::Assign(identifier, Box::new(expr)),
     <Expr> ";" => Statement::Expr(Box::new(<>)),
     "return" <Expr> ";" => Statement::Return(Box::new(<>)),
+    "if" "(" <condition: Expr> ")" "{" <if_statement:Statement> "}" <else_statement: ElseBlock?> =>
+        Statement::If(Box::new(condition), Box::new(if_statement), else_statement),
+}
+
+ElseBlock: Box<Statement> = {
+    "else" "{" <Statement> "}" => Box::new(<>),
 }
 
 Identifier: String = {

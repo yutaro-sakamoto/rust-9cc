@@ -29,6 +29,9 @@ pub enum Instruction {
     Setne(Operand),
     Setl(Operand),
     Setle(Operand),
+    Je(String),
+    Jmp(String),
+    Label(String),
 }
 
 impl fmt::Debug for Instruction {
@@ -50,6 +53,9 @@ impl fmt::Debug for Instruction {
             Instruction::Setne(o) => write!(f, "setne {:?}", o),
             Instruction::Setl(o) => write!(f, "setl {:?}", o),
             Instruction::Setle(o) => write!(f, "setle {:?}", o),
+            Instruction::Je(label) => write!(f, "je {}", label),
+            Instruction::Jmp(label) => write!(f, "jmp {}", label),
+            Instruction::Label(label) => write!(f, "{}:", label),
         }
     }
 }
@@ -116,6 +122,18 @@ pub fn setl(operand: Operand) -> Instruction {
 
 pub fn setle(operand: Operand) -> Instruction {
     Instruction::Setle(operand)
+}
+
+pub fn je(label: String) -> Instruction {
+    Instruction::Je(label)
+}
+
+pub fn jmp(label: String) -> Instruction {
+    Instruction::Jmp(label)
+}
+
+pub fn label(label: String) -> Instruction {
+    Instruction::Label(label)
 }
 
 pub enum Operand {

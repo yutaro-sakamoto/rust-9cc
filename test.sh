@@ -77,7 +77,12 @@ assert_program 3 'a=1;b=2;a+b;'
 assert_program 9 'aa=1;bbb=2;cccc=aa+bbb;(aa+bbb)*cccc;'
 assert_program 9 'aa = 1; bbb = 2; cccc= aa + bbb; (aa + bbb) * cccc;'
 
-# test return statement
+# test return statements
 assert_program 3 'return 1 + 2;'
 assert_program 3 'a = 1; b = 2; return a + b;'
+
+# test if statements
+assert_program 3 'a = 1; b = 2; if (b == 2) {a = a + 2;} a;'
+assert_program 3 'a = 1; b = 2; if (b == 2) {a = a + 2;} else { a = a + 3; } a;'
+assert_program 4 'a = 1; b = 2; if (b != 2) {a = a + 2;} else { a = a + 3; } a;'
 echo OK

@@ -10,6 +10,7 @@ pub enum Statement {
     Expr(Box<Expr>),
     Assign(String, Box<Expr>),
     Return(Box<Expr>),
+    If(Box<Expr>, Box<Statement>, Option<Box<Statement>>),
 }
 pub enum Expr {
     ArithExpr(Box<ArithExpr>),
@@ -43,13 +44,20 @@ pub enum Atom {
 
 pub struct MetaInfo {
     pub variable_map: HashMap<String, u32>,
+    label_count: u64,
 }
 
 impl MetaInfo {
     pub fn new() -> MetaInfo {
         MetaInfo {
             variable_map: HashMap::new(),
+            label_count: 0,
         }
+    }
+
+    pub fn get_new_label(&mut self) -> String {
+        self.label_count += 1;
+        format!(".L{}", self.label_count)
     }
 }
 
@@ -97,6 +105,30 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
         Statement::Return(expr) => {
             let mut assembly: Assembly = get_assembly_expr(expr, meta_info);
             assembly.append(&mut vec![pop(rax()), mov(rsp(), rbp()), pop(rbp()), ret()]);
+            assembly
+        }
+        Statement::If(expr, if_statement, else_statement) => {
+            let mut assembly: Assembly = Vec::new();
+            assembly.append(&mut get_assembly_expr(expr, meta_info));
+            assembly.append(&mut vec![pop(rax()), cmp(rax(), immediate(0))]);
+            match else_statement {
+                Some(else_statement) => {
+                    let else_label = meta_info.get_new_label();
+                    let end_label = meta_info.get_new_label();
+                    assembly.push(je(else_label.clone()));
+                    assembly.append(&mut get_assembly_statement(if_statement, meta_info));
+                    assembly.push(jmp(end_label.clone()));
+                    assembly.push(label(else_label));
+                    assembly.append(&mut get_assembly_statement(else_statement, meta_info));
+                    assembly.push(label(end_label));
+                }
+                None => {
+                    let end_label = meta_info.get_new_label();
+                    assembly.push(je(end_label.clone()));
+                    assembly.append(&mut get_assembly_statement(if_statement, meta_info));
+                    assembly.push(label(end_label));
+                }
+            }
             assembly
         }
     }
