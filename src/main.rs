@@ -8,7 +8,8 @@ lalrpop_mod!(
 );
 pub mod assembly;
 pub mod ast;
-use crate::ast::*;
+pub mod gen_code;
+use crate::gen_code::print_assembly;
 use std::env;
 
 #[derive(Debug)]
@@ -25,8 +26,7 @@ fn main() -> Result<(), CompilerError> {
     }
     match parser::ProgramParser::new().parse(&args[1]) {
         Ok(parse_tree) => {
-            let mut meta_info = MetaInfo::default();
-            print_assembly(&parse_tree, &mut meta_info);
+            print_assembly(&parse_tree);
         }
         Err(e) => {
             eprintln!("Failed to parse: {}", e);
