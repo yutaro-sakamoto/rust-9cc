@@ -85,10 +85,12 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_lval(left, meta_info));
             assembly.append(&mut get_assembly_expr(expr, meta_info));
-            assembly.push(pop(rdi()));
-            assembly.push(pop(rax()));
-            assembly.push(mov(m_rax(), rdi()));
-            assembly.push(push(rdi()));
+            assembly.append(&mut vec![
+                pop(rdi()),
+                pop(rax()),
+                mov(m_rax(), rdi()),
+                push(rdi()),
+            ]);
             assembly
         }
     }
@@ -162,12 +164,14 @@ fn get_compare_instruction(
     let mut assembly: Assembly = Vec::new();
     assembly.append(&mut get_assembly_arith_expr(left, meta_info));
     assembly.append(&mut get_assembly_arith_expr(right, meta_info));
-    assembly.push(pop(rdi()));
-    assembly.push(pop(rax()));
-    assembly.push(cmp(rax(), rdi()));
-    assembly.push(gen_instruction(al()));
-    assembly.push(movzb(rax(), al()));
-    assembly.push(push(rax()));
+    assembly.append(&mut vec![
+        pop(rdi()),
+        pop(rax()),
+        cmp(rax(), rdi()),
+        gen_instruction(al()),
+        movzb(rax(), al()),
+        push(rax()),
+    ]);
     assembly
 }
 
@@ -178,20 +182,24 @@ fn get_assembly_arith_expr(expr: &ArithExpr, meta_info: &mut MetaInfo) -> Assemb
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_arith_expr(expr, meta_info));
             assembly.append(&mut get_assembly_factor(factor, meta_info));
-            assembly.push(pop(rdi()));
-            assembly.push(pop(rax()));
-            assembly.push(add(rax(), rdi()));
-            assembly.push(push(rax()));
+            assembly.append(&mut vec![
+                pop(rdi()),
+                pop(rax()),
+                add(rax(), rdi()),
+                push(rax()),
+            ]);
             assembly
         }
         ArithExpr::Sub(expr, factor) => {
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_arith_expr(expr, meta_info));
             assembly.append(&mut get_assembly_factor(factor, meta_info));
-            assembly.push(pop(rdi()));
-            assembly.push(pop(rax()));
-            assembly.push(sub(rax(), rdi()));
-            assembly.push(push(rax()));
+            assembly.append(&mut vec![
+                pop(rdi()),
+                pop(rax()),
+                sub(rax(), rdi()),
+                push(rax()),
+            ]);
             assembly
         }
     }
@@ -204,21 +212,20 @@ fn get_assembly_factor(factor: &Factor, meta_info: &mut MetaInfo) -> Assembly {
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_factor(factor, meta_info));
             assembly.append(&mut get_assembly_unary(unary, meta_info));
-            assembly.push(pop(rdi()));
-            assembly.push(pop(rax()));
-            assembly.push(mul(rdi()));
-            assembly.push(push(rax()));
+            assembly.append(&mut vec![pop(rdi()), pop(rax()), mul(rdi()), push(rax())]);
             assembly
         }
         Factor::Div(factor, unary) => {
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_factor(factor, meta_info));
             assembly.append(&mut get_assembly_unary(unary, meta_info));
-            assembly.push(pop(rdi()));
-            assembly.push(pop(rax()));
-            assembly.push(cqo());
-            assembly.push(idiv(rdi()));
-            assembly.push(push(rax()));
+            assembly.append(&mut vec![
+                pop(rdi()),
+                pop(rax()),
+                cqo(),
+                idiv(rdi()),
+                push(rax()),
+            ]);
             assembly
         }
     }
@@ -230,9 +237,7 @@ fn get_assembly_unary(unary: &Unary, meta_info: &mut MetaInfo) -> Assembly {
         Unary::Neg(atom) => {
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_atom(atom, meta_info));
-            assembly.push(pop(rax()));
-            assembly.push(neg(rax()));
-            assembly.push(push(rax()));
+            assembly.append(&mut vec![pop(rax()), neg(rax()), push(rax())]);
             assembly
         }
     }
@@ -243,12 +248,12 @@ fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Assembly {
         Atom::Number(n) => vec![Instruction::Push(Operand::Immediate(*n))],
         Atom::Expr(expr) => get_assembly_expr(expr, meta_info),
         Atom::Variable(lval) => {
-            let mut assembly: Assembly = Vec::new();
             let id = get_variable_id_and_register_it(lval, meta_info);
-            assembly.push(mov(rax(), rbp()));
-            assembly.push(sub(rax(), immediate((id + 1) as i32 * 8)));
-            assembly.push(push(m_rax()));
-            assembly
+            vec![
+                mov(rax(), rbp()),
+                sub(rax(), immediate((id + 1) as i32 * 8)),
+                push(m_rax()),
+            ]
         }
     }
 }
