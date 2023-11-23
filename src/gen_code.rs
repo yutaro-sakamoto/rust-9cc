@@ -89,9 +89,11 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
         }
         Statement::Block(statements) => {
             let mut assembly: Assembly = Vec::new();
-            for statement in statements.iter() {
+            for (index, statement) in statements.iter().enumerate() {
                 assembly.append(&mut get_assembly_statement(statement, meta_info));
-                assembly.push(pop(rax()));
+                if index != statements.len() - 1 {
+                    assembly.push(pop(rax()));
+                }
             }
             assembly
         }
@@ -131,6 +133,33 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
                 je(end_label.clone()),
             ]);
             assembly.append(&mut get_assembly_statement(statement, meta_info));
+            assembly.push(jmp(start_label));
+            assembly.push(label(end_label));
+            assembly
+        }
+        Statement::For(init, cond, update, statement) => {
+            let mut assembly: Assembly = Vec::new();
+            if let Some(ref init) = **init {
+                assembly.append(&mut get_assembly_statement(init, meta_info));
+                assembly.push(pop(rax()));
+            }
+            let start_label = meta_info.get_new_label();
+            let end_label = meta_info.get_new_label();
+            assembly.push(label(start_label.clone()));
+            if let Some(ref cond) = **cond {
+                assembly.append(&mut get_assembly_expr(cond, meta_info));
+                assembly.append(&mut vec![
+                    pop(rax()),
+                    cmp(rax(), immediate(0)),
+                    je(end_label.clone()),
+                ]);
+            }
+            assembly.append(&mut get_assembly_statement(statement, meta_info));
+            assembly.push(pop(rax()));
+            if let Some(ref update) = **update {
+                assembly.append(&mut get_assembly_statement(update, meta_info));
+                assembly.push(pop(rax()));
+            }
             assembly.push(jmp(start_label));
             assembly.push(label(end_label));
             assembly

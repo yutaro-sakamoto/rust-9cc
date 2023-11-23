@@ -10,6 +10,12 @@ pub enum Statement {
     If(Box<Expr>, Box<Statement>, Box<Option<Statement>>),
     Block(Vec<Statement>),
     While(Box<Expr>, Box<Statement>),
+    For(
+        Box<Option<Statement>>,
+        Box<Option<Expr>>,
+        Box<Option<Statement>>,
+        Box<Statement>,
+    ),
 }
 pub enum Expr {
     ArithExpr(Box<ArithExpr>),

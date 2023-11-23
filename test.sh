@@ -92,4 +92,9 @@ assert_program 5 'a = 1; b = 2; if (b != 2) {a = a + 2;} else { a = a + 3;  a = 
 
 # test while statements
 assert_program 10 'a = 0; while (a < 10) { a = a + 1; } a;'
+
+# test for statements
+assert_program 10 'a = 0; for (i = 0; i < 10; i = i + 1) { a = a + 1; } a;'
+assert_program 10 'a = 0; i = 0; for (; i < 10; i = i + 1) { a = a + 1; } a;'
+assert_program 10 'a = 0; for (i = 0; i < 10; ) { a = a + 1; i = i + 1; } a;'
 echo OK

@@ -7,14 +7,34 @@ pub Program: Program = {
 }
         
 Statement: Statement = {
-    <identifier: Identifier> "=" <expr: Expr> ";" => Statement::Assign(identifier, Box::new(expr)),
-    <Expr> ";" => Statement::Expr(Box::new(<>)),
+    <AssignStatement> ";" => <>,
+    <SingleExprStatement> ";" => <>,
     "return" <Expr> ";" => Statement::Return(Box::new(<>)),
     "if" "(" <condition: Expr> ")" <if_block: BlockStatement> <else_block: ElseBlock?> =>
         Statement::If(Box::new(condition), Box::new(if_block), Box::new(else_block)),
     <BlockStatement> => <>,
     "while" "(" <condition: Expr> ")" <block: BlockStatement> =>
         Statement::While(Box::new(condition), Box::new(block)),
+    "for" "(" <init: ForInit?> ";" <condition: Expr?> ";" <step: ForStep?> ")" <block: BlockStatement> =>
+        Statement::For(Box::new(init), Box::new(condition), Box::new(step), Box::new(block)),
+}
+
+AssignStatement: Statement = {
+    <identifier: Identifier> "=" <expr: Expr> => Statement::Assign(identifier, Box::new(expr)),
+}
+
+SingleExprStatement: Statement = {
+    <expr: Expr> => Statement::Expr(Box::new(expr)),
+}
+
+ForInit: Statement = {
+    <AssignStatement> => <>,
+    <SingleExprStatement> => <>,
+}
+
+ForStep: Statement = {
+    <AssignStatement> => <>,
+    <SingleExprStatement> => <>,
 }
 
 ElseBlock: Statement = {
