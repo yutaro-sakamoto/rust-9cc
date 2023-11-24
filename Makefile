@@ -1,6 +1,6 @@
 SHELL = /bin/bash
 RUST_9CC = target/release/rust-9cc
-SRC = src/main.rs src/ast.rs src/assembly.rs src/gen_code.rs
+SRC = src/main.rs src/ast.rs src/assembly.rs src/gen_code.rs src/virtual_machine.rs
 TEMP_FILES = tmp tmp.s
 LCOV_FILE = lcov.info
 
