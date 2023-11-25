@@ -98,4 +98,5 @@ assert_program 10 'a = 0; for (i = 0; i < 10; i = i + 1) { a = a + 1; } a;'
 assert_program 10 'a = 0; i = 0; for (; i < 10; i = i + 1) { a = a + 1; } a;'
 assert_program 5 'for (i = 5; ; i = i + 1) { break; } i;'
 assert_program 10 'a = 0; for (i = 0; i < 10; ) { a = a + 1; i = i + 1; } a;'
+assert_program 10 'a = 2; i = 5; while(i < 10) { if(i == 7) { a = 10; } i = i + 1; } a;'
 echo OK

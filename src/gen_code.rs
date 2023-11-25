@@ -86,6 +86,7 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
         Statement::Expr(expr) => get_assembly_expr(expr, meta_info),
         Statement::Assign(left, expr) => {
             let mut assembly: Assembly = Vec::new();
+            assembly.push(comment("assign"));
             assembly.append(&mut get_assembly_lval(left, meta_info));
             assembly.append(&mut get_assembly_expr(expr, meta_info));
             assembly.append(&mut vec![
@@ -94,6 +95,7 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
                 mov(m_rax(), rdi()),
                 push(rdi()),
             ]);
+            assembly.push(comment("assign end"));
             assembly
         }
         Statement::Return(expr) => {
@@ -113,6 +115,7 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
         }
         Statement::If(expr, if_statement, else_statement) => {
             let mut assembly: Assembly = Vec::new();
+            assembly.push(comment("if"));
             assembly.append(&mut get_assembly_expr(expr, meta_info));
             assembly.append(&mut vec![pop(rax()), cmp(rax(), immediate(0))]);
             match **else_statement {
@@ -122,6 +125,7 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
                     assembly.push(je(else_label.clone()));
                     assembly.append(&mut get_assembly_statement(if_statement, meta_info));
                     assembly.push(jmp(end_label.clone()));
+                    assembly.push(comment("else"));
                     assembly.push(label(else_label));
                     assembly.append(&mut get_assembly_statement(else_statement, meta_info));
                     assembly.push(label(end_label));
@@ -130,9 +134,12 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
                     let end_label = meta_info.get_new_label();
                     assembly.push(je(end_label.clone()));
                     assembly.append(&mut get_assembly_statement(if_statement, meta_info));
+                    assembly.push(pop(rax()));
                     assembly.push(label(end_label));
                 }
             }
+            assembly.push(push(immediate(0)));
+            assembly.push(comment("if end"));
             assembly
         }
         Statement::While(expr, statement) => {
@@ -143,6 +150,7 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
             meta_info.push_label_for_break(end_label.clone());
 
             assembly.push(label(start_label.clone()));
+            assembly.push(comment("while"));
             assembly.append(&mut get_assembly_expr(expr, meta_info));
             assembly.append(&mut vec![
                 pop(rax()),
@@ -150,8 +158,12 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
                 je(end_label.clone()),
             ]);
             assembly.append(&mut get_assembly_statement(statement, meta_info));
+            assembly.push(comment("while content pop"));
+            assembly.push(pop(rax()));
             assembly.push(jmp(start_label));
             assembly.push(label(end_label));
+            assembly.push(push(immediate(0)));
+            assembly.push(comment("while end"));
 
             meta_info.pop_label_for_break();
 
