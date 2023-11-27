@@ -33,6 +33,7 @@ pub enum Instruction {
     Jmp(String),
     Label(String),
     Comment(String),
+    Call(String),
 }
 
 impl fmt::Debug for Instruction {
@@ -58,6 +59,7 @@ impl fmt::Debug for Instruction {
             Instruction::Jmp(label) => write!(f, "jmp {}", label),
             Instruction::Label(label) => write!(f, "{}:", label),
             Instruction::Comment(comment) => write!(f, "// {}", comment),
+            Instruction::Call(label) => write!(f, "call {}", label),
         }
     }
 }
@@ -142,6 +144,11 @@ pub fn comment(comment: &str) -> Instruction {
     Instruction::Comment(comment.to_string())
 }
 
+pub fn call(label: String) -> Instruction {
+    Instruction::Call(label)
+}
+
+#[derive(Clone)]
 pub enum Operand {
     Register(Register),
     Immediate(i32),
@@ -162,11 +169,17 @@ impl fmt::Debug for Operand {
     }
 }
 
+#[derive(Clone)]
 pub enum Register {
     RAX,
     RBP,
     RDI,
+    RSI,
     RSP,
+    RDX,
+    RCX,
+    R8,
+    R9,
     AL,
 }
 
@@ -176,7 +189,12 @@ impl fmt::Debug for Register {
             Register::RAX => write!(f, "rax"),
             Register::RBP => write!(f, "rbp"),
             Register::RDI => write!(f, "rdi"),
+            Register::RSI => write!(f, "rsi"),
             Register::RSP => write!(f, "rsp"),
+            Register::RDX => write!(f, "rdx"),
+            Register::RCX => write!(f, "rcx"),
+            Register::R8 => write!(f, "r8"),
+            Register::R9 => write!(f, "r9"),
             Register::AL => write!(f, "al"),
         }
     }
@@ -198,8 +216,28 @@ pub fn rdi() -> Operand {
     Operand::Register(Register::RDI)
 }
 
+pub fn rsi() -> Operand {
+    Operand::Register(Register::RSI)
+}
+
+pub fn rdx() -> Operand {
+    Operand::Register(Register::RDX)
+}
+
+pub fn rcx() -> Operand {
+    Operand::Register(Register::RCX)
+}
+
 pub fn rsp() -> Operand {
     Operand::Register(Register::RSP)
+}
+
+pub fn r8() -> Operand {
+    Operand::Register(Register::R8)
+}
+
+pub fn r9() -> Operand {
+    Operand::Register(Register::R9)
 }
 
 pub fn al() -> Operand {

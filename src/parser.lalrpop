@@ -81,5 +81,22 @@ Unary: Unary = {
 Atom: Atom = {
     r"[0-9]+" => Atom::Number(i32::from_str(<>).unwrap()),
     "(" <expr:Expr> ")" => Atom::Expr(Box::new(expr)),
-    r"[a-zA-Z_][a-zA-Z0-9_]*" => Atom::Variable(String::from_str(<>).unwrap()),
+    <identifier:Identifier> <arguments:ArgumentList?> => {
+        match arguments {
+            Some(arguments) => Atom::FunctionCall(identifier, arguments),
+            None => Atom::Variable(identifier),
+        }
+    }
+}
+
+ArgumentList: Vec<Expr> = {
+    "(" <arg:Expr> <rest_args: RestArgument*> ")" => {
+        let mut ret = vec![arg];
+        ret.extend(rest_args);
+        ret
+    }
+}
+
+RestArgument: Expr = {
+    "," <arg:Expr> => arg,
 }

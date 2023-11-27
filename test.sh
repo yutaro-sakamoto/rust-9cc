@@ -1,5 +1,7 @@
 #!/bin/bash
 RUST_9CC=target/debug/rust-9cc
+C_FUNCTION_OBJ=functions_for_test.o
+
 assert() {
     expected="$1"
     command="${@:2}"
@@ -19,9 +21,10 @@ assert() {
 assert_program() {
     expected="$1"
     input="$2"
+    link="$3"
 
     ${RUST_9CC} "$input" > tmp.s
-    cc -o tmp tmp.s
+    cc -o tmp tmp.s $link
     ./tmp
     actual="$?"
 
@@ -103,4 +106,10 @@ assert_program 10 'a = 2; i = 5; while(i < 10) { if(i == 7) { a = 10; } i = i + 
 # test break statements
 assert_program 5 'a = 0; while (a < 10) { if(a == 5) {break;} a = a + 1; } a;'
 assert_program 6 'for (i = 0; i < 10; i = i + 1) { if(i >= 6) {break;} } i;'
+
+# test call
+assert_program 2 'sub(5, 3);' $C_FUNCTION_OBJ
+assert_program 102 'a = sub(5, 3); b = avg3(100, 50, 150); a + b;' $C_FUNCTION_OBJ
+assert_program 21 'sum6(1,2,3,4,5,6);' $C_FUNCTION_OBJ
+
 echo OK

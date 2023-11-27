@@ -348,7 +348,7 @@ fn get_assembly_unary(unary: &Unary, meta_info: &mut MetaInfo) -> Assembly {
 
 fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Assembly {
     match atom {
-        Atom::Number(n) => vec![Instruction::Push(Operand::Immediate(*n))],
+        Atom::Number(n) => vec![push(Operand::Immediate(*n))],
         Atom::Expr(expr) => get_assembly_expr(expr, meta_info),
         Atom::Variable(lval) => {
             let id = meta_info.get_variable_id_and_register_it(lval);
@@ -357,6 +357,18 @@ fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Assembly {
                 sub(rax(), immediate((id + 1) as i32 * 8)),
                 push(m_rax()),
             ]
+        }
+        // 7 or more arguments are not supported
+        Atom::FunctionCall(func_name, arguments) => {
+            let mut assembly: Assembly = Vec::new();
+            let argument_registers = vec![rdi(), rsi(), rdx(), rcx(), r8(), r9()];
+            for (argument, register) in arguments.iter().zip(argument_registers.iter()) {
+                assembly.append(&mut get_assembly_expr(argument, meta_info));
+                assembly.push(pop(register.clone()));
+            }
+            assembly.push(call(func_name.clone()));
+            assembly.push(push(rax()));
+            assembly
         }
     }
 }
