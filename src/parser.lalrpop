@@ -112,6 +112,7 @@ Atom: Atom = {
 }
 
 ArgumentList: Vec<Expr> = {
+    "(" ")" => vec![],
     "(" <arg:Expr> <rest_args: RestArgument*> ")" => {
         let mut ret = vec![arg];
         ret.extend(rest_args);

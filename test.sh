@@ -108,6 +108,7 @@ assert_program 5 'a = 0; while (a < 10) { if(a == 5) {break;} a = a + 1; } a;'
 assert_program 6 'for (i = 0; i < 10; i = i + 1) { if(i >= 6) {break;} } i;'
 
 # test call
+assert_program 3 'three();' $C_FUNCTION_OBJ
 assert_program 2 'sub(5, 3);' $C_FUNCTION_OBJ
 assert_program 102 'a = sub(5, 3); b = avg3(100, 50, 150); a + b;' $C_FUNCTION_OBJ
 assert_program 21 'sum6(1,2,3,4,5,6);' $C_FUNCTION_OBJ
