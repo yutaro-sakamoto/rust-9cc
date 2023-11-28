@@ -1,8 +1,14 @@
 use std::vec::Vec;
 
 pub struct Program {
-    pub statements: Vec<Statement>,
+    pub program_units: Vec<ProgramUnit>,
 }
+
+pub enum ProgramUnit {
+    FuncDef(String, Vec<String>, Box<Statement>),
+    Statement(Box<Statement>),
+}
+
 pub enum Statement {
     Expr(Box<Expr>),
     Assign(String, Box<Expr>),

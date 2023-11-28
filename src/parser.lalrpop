@@ -3,7 +3,29 @@ use crate::ast::*;
 
 grammar;
 pub Program: Program = {
-    <statements:Statement*> => Program { statements: statements },
+    <program_units:ProgramUnit*> => Program { program_units },
+}
+
+ProgramUnit: ProgramUnit = {
+    "fn" <func_name: Identifier> "(" <parameters: Parameters?> ")" <block: BlockStatement> => {
+        match parameters {
+            Some(parameters) => ProgramUnit::FuncDef(func_name, parameters, Box::new(block)),
+            None => ProgramUnit::FuncDef(func_name, vec![], Box::new(block)),
+        }
+    },
+    <statement: Statement> => ProgramUnit::Statement(Box::new(statement)),
+}
+
+Parameters: Vec<String> = {
+    <identifier: Identifier> <rest: RestParameter*> => {
+        let mut ret = vec![identifier];
+        ret.extend(rest);
+        ret
+    }
+}
+
+RestParameter: String = {
+    "," <identifier: Identifier> => identifier,
 }
         
 Statement: Statement = {

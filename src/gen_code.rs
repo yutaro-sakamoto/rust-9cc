@@ -67,9 +67,16 @@ fn print_assembly_internal(program: &Program, meta_info: &mut MetaInfo) {
     println!("main:");
     let header_code = vec![push(rbp()), mov(rbp(), rsp())];
     let mut main_code: Assembly = Vec::new();
-    for statement in program.statements.iter() {
-        main_code.append(&mut get_assembly_statement(statement, meta_info));
-        main_code.push(pop(rax()));
+    for program_unit in program.program_units.iter() {
+        match program_unit {
+            ProgramUnit::FuncDef(_, _, _) => {
+                //do nothing
+            }
+            ProgramUnit::Statement(statement) => {
+                main_code.append(&mut get_assembly_statement(statement, meta_info));
+                main_code.push(pop(rax()));
+            }
+        }
     }
     let number_of_variables = meta_info.get_number_of_variables();
     let sub_rsp_code = sub(rsp(), immediate(8 * number_of_variables as i32));
