@@ -46,6 +46,7 @@ pub enum Factor {
 pub enum Unary {
     Atom(Box<Atom>),
     Neg(Box<Atom>),
+    PointerDeref(Box<Atom>),
 }
 
 pub enum Atom {

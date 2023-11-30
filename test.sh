@@ -115,4 +115,8 @@ assert_program 21 'sum6(1,2,3,4,5,6);' $C_FUNCTION_OBJ
 
 # test function definitions
 assert_program 123 'fn add(x, y) { x + y; } 123;'
+
+# test pointer
+# TODO: The below test is for the temporary implementation. 
+assert_program 0 'a = 1; b = *a; b;'
 echo OK

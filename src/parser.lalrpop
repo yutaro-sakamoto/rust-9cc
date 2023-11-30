@@ -97,6 +97,7 @@ Factor: Factor = {
 Unary: Unary = {
     "-" <atom:Atom> => Unary::Neg(Box::new(atom)),
     "+" <atom:Atom> => Unary::Atom(Box::new(atom)),
+    "*" <atom:Atom> => Unary::PointerDeref(Box::new(atom)),
     <atom:Atom> => Unary::Atom(Box::new(atom)),
 }
 

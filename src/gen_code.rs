@@ -350,6 +350,10 @@ fn get_assembly_unary(unary: &Unary, meta_info: &mut MetaInfo) -> Assembly {
             assembly.append(&mut vec![pop(rax()), neg(rax()), push(rax())]);
             assembly
         }
+        Unary::PointerDeref(_) => {
+            //TODO temporary implementation
+            vec![mov(rax(), immediate(0)), push(rax())]
+        }
     }
 }
 
