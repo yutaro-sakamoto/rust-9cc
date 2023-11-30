@@ -1,7 +1,10 @@
 SHELL = /bin/bash
 RUST_9CC = target/release/rust-9cc
 SRC = src/main.rs src/ast.rs src/assembly.rs src/gen_code.rs src/virtual_machine.rs
-TEMP_FILES = tmp tmp.s
+TEMP_SOURCE = tmp.s
+TEMP_OBJECT = tmp
+TEMP_DEBUG_OBJECT = tmpg
+TEMP_FILES = $(TEMP_SOURCE) $(TEMP_OBJECT)
 C_FUNCTIONS_FILE = functions_for_test.c
 C_FUNCTIONS_OBJ = functions_for_test.o
 LCOV_FILE = lcov.info
@@ -36,5 +39,10 @@ clean:
 
 $(RUST_9CC): $(SRC)
 	cargo build --release
+
+dbg: $(TEMP_DEBUG_OBJECT)
+
+$(TEMP_DEBUG_OBJECT): $(TEMP_SOURCE)
+	gcc -o $(TEMP_DEBUG_OBJECT) -g $(TEMP_SOURCE)
 
 .PHONY: all test clean
