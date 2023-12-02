@@ -1,6 +1,6 @@
 SHELL = /bin/bash
 RUST_9CC = target/release/rust-9cc
-SRC = src/main.rs src/ast.rs src/assembly.rs src/gen_code.rs src/virtual_machine.rs
+SRC = src/*.rs
 TEMP_SOURCE = tmp.s
 TEMP_OBJECT = tmp
 TEMP_DEBUG_OBJECT = tmpg
@@ -21,7 +21,7 @@ endef
 
 # Run Integration tests
 test: $(C_FUNCTIONS_OBJ)
-	$(call run_external_test,'cargo llvm-cov report --fail-under-regions 100')
+	$(call run_external_test,'cargo llvm-cov report --fail-under-functions 100 --fail-under-lines 100')
 
 # Run Integration tests and generate a lcov file
 test-lcov: $(C_FUNCTIONS_OBJ)

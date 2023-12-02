@@ -36,6 +36,17 @@ assert_program() {
     fi
 }
 
+assert_fail_compile() {
+    input="$1"
+
+    ${RUST_9CC} "$input" > tmp.s
+    if [ "$?" = "0" ]; then
+      echo "should fail to compile, but succeeded"
+      exit 1
+    fi
+    true
+}
+
 # test the format of command line arguments
 assert 1 ${RUST_9CC}
 assert 1 ${RUST_9CC} 'first argument' 'second argument'
@@ -127,7 +138,7 @@ assert_program 123 'int a; a = 123; int b; b = &a; *b;'
 assert_program 3 'int x; x = 3; int y; y = 5; int z; z = &y + 8; *z;'
 
 # test undefined variable
-assert_program 127 'a = 1; a;'
-assert_program 127 'a;'
-assert_program 127 '&a;'
+assert_fail_compile 'a = 1; a;'
+assert_fail_compile 'a;'
+assert_fail_compile '&a;'
 echo OK

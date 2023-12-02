@@ -1,5 +1,6 @@
 use crate::assembly::*;
 use crate::ast::*;
+use crate::compile_error::CompilerError;
 use std::collections::HashMap;
 
 pub struct VarInfo {
@@ -97,14 +98,15 @@ impl Default for MetaInfo {
     }
 }
 
-pub fn print_assembly(program: &Program) {
+pub fn print_assembly(program: &Program) -> Result<(), CompilerError> {
     let mut meta_info = MetaInfo::default();
-    print_assembly_internal(program, &mut meta_info);
+    print_assembly_internal(program, &mut meta_info)
 }
 
-fn print_assembly_internal(program: &Program, meta_info: &mut MetaInfo) {
-    println!(".intel_syntax noprefix");
-    println!(".global main\n");
+fn print_assembly_internal(
+    program: &Program,
+    meta_info: &mut MetaInfo,
+) -> Result<(), CompilerError> {
     let main_label = label("main".to_string());
     let header_code = vec![push(rbp()), mov(rbp(), rsp())];
     let footer_code = vec![mov(rsp(), rbp()), pop(rbp()), ret()];
@@ -138,7 +140,7 @@ fn print_assembly_internal(program: &Program, meta_info: &mut MetaInfo) {
                 }
 
                 // Function body
-                func_def_code.append(&mut get_assembly_statement(statement, meta_info));
+                func_def_code.append(&mut get_assembly_statement(statement, meta_info)?);
 
                 // Postlude code
                 func_def_code.append(&mut footer_code.clone());
@@ -147,7 +149,7 @@ fn print_assembly_internal(program: &Program, meta_info: &mut MetaInfo) {
                 meta_info.pop_scope();
             }
             ProgramUnit::Statement(statement) => {
-                main_code.append(&mut get_assembly_statement(statement, meta_info));
+                main_code.append(&mut get_assembly_statement(statement, meta_info)?);
                 main_code.push(pop(rax()));
             }
         }
@@ -155,22 +157,28 @@ fn print_assembly_internal(program: &Program, meta_info: &mut MetaInfo) {
     let number_of_variables = meta_info.get_number_of_variables();
     let sub_rsp_code = sub(rsp(), immediate(8 * number_of_variables as i32));
 
+    println!(".intel_syntax noprefix");
+    println!(".global main\n");
     print_single_instruction(&main_label);
     print_assembly_code(&header_code);
     print_single_instruction(&sub_rsp_code);
     print_assembly_code(&main_code);
     print_assembly_code(&footer_code);
     print_assembly_code(&func_def_code);
+    Ok(())
 }
 
-pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -> Assembly {
+pub fn get_assembly_statement(
+    statement: &Statement,
+    meta_info: &mut MetaInfo,
+) -> Result<Assembly, CompilerError> {
     match statement {
         Statement::Expr(expr) => get_assembly_expr(expr, meta_info),
         Statement::Assign(left, expr) => {
             let mut assembly: Assembly = Vec::new();
             assembly.push(comment("assign"));
-            assembly.append(&mut get_assembly_lval(left, meta_info));
-            assembly.append(&mut get_assembly_expr(expr, meta_info));
+            assembly.append(&mut get_assembly_lval(left, meta_info)?);
+            assembly.append(&mut get_assembly_expr(expr, meta_info)?);
             assembly.append(&mut vec![
                 pop(rdi()),
                 pop(rax()),
@@ -178,51 +186,51 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
                 push(rdi()),
             ]);
             assembly.push(comment("assign end"));
-            assembly
+            Ok(assembly)
         }
         Statement::Return(expr) => {
-            let mut assembly: Assembly = get_assembly_expr(expr, meta_info);
+            let mut assembly: Assembly = get_assembly_expr(expr, meta_info)?;
             assembly.append(&mut vec![pop(rax()), mov(rsp(), rbp()), pop(rbp()), ret()]);
-            assembly
+            Ok(assembly)
         }
         Statement::Block(statements) => {
             let mut assembly: Assembly = Vec::new();
             for (index, statement) in statements.iter().enumerate() {
-                assembly.append(&mut get_assembly_statement(statement, meta_info));
+                assembly.append(&mut get_assembly_statement(statement, meta_info)?);
                 if index != statements.len() - 1 {
                     assembly.push(pop(rax()));
                 }
             }
-            assembly
+            Ok(assembly)
         }
         Statement::If(expr, if_statement, else_statement) => {
             let mut assembly: Assembly = Vec::new();
             assembly.push(comment("if"));
-            assembly.append(&mut get_assembly_expr(expr, meta_info));
+            assembly.append(&mut get_assembly_expr(expr, meta_info)?);
             assembly.append(&mut vec![pop(rax()), cmp(rax(), immediate(0))]);
             match **else_statement {
                 Some(ref else_statement) => {
                     let else_label = meta_info.get_new_label();
                     let end_label = meta_info.get_new_label();
                     assembly.push(je(else_label.clone()));
-                    assembly.append(&mut get_assembly_statement(if_statement, meta_info));
+                    assembly.append(&mut get_assembly_statement(if_statement, meta_info)?);
                     assembly.push(jmp(end_label.clone()));
                     assembly.push(comment("else"));
                     assembly.push(label(else_label));
-                    assembly.append(&mut get_assembly_statement(else_statement, meta_info));
+                    assembly.append(&mut get_assembly_statement(else_statement, meta_info)?);
                     assembly.push(label(end_label));
                 }
                 None => {
                     let end_label = meta_info.get_new_label();
                     assembly.push(je(end_label.clone()));
-                    assembly.append(&mut get_assembly_statement(if_statement, meta_info));
+                    assembly.append(&mut get_assembly_statement(if_statement, meta_info)?);
                     assembly.push(pop(rax()));
                     assembly.push(label(end_label));
                 }
             }
             assembly.push(push(immediate(0)));
             assembly.push(comment("if end"));
-            assembly
+            Ok(assembly)
         }
         Statement::While(expr, statement) => {
             let mut assembly: Assembly = Vec::new();
@@ -233,13 +241,13 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
 
             assembly.push(label(start_label.clone()));
             assembly.push(comment("while"));
-            assembly.append(&mut get_assembly_expr(expr, meta_info));
+            assembly.append(&mut get_assembly_expr(expr, meta_info)?);
             assembly.append(&mut vec![
                 pop(rax()),
                 cmp(rax(), immediate(0)),
                 je(end_label.clone()),
             ]);
-            assembly.append(&mut get_assembly_statement(statement, meta_info));
+            assembly.append(&mut get_assembly_statement(statement, meta_info)?);
             assembly.push(comment("while content pop"));
             assembly.push(pop(rax()));
             assembly.push(jmp(start_label));
@@ -249,12 +257,12 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
 
             meta_info.pop_label_for_break();
 
-            assembly
+            Ok(assembly)
         }
         Statement::For(init, cond, update, statement) => {
             let mut assembly: Assembly = Vec::new();
             if let Some(ref init) = **init {
-                assembly.append(&mut get_assembly_statement(init, meta_info));
+                assembly.append(&mut get_assembly_statement(init, meta_info)?);
                 assembly.push(pop(rax()));
             }
             let start_label = meta_info.get_new_label();
@@ -264,17 +272,17 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
 
             assembly.push(label(start_label.clone()));
             if let Some(ref cond) = **cond {
-                assembly.append(&mut get_assembly_expr(cond, meta_info));
+                assembly.append(&mut get_assembly_expr(cond, meta_info)?);
                 assembly.append(&mut vec![
                     pop(rax()),
                     cmp(rax(), immediate(0)),
                     je(end_label.clone()),
                 ]);
             }
-            assembly.append(&mut get_assembly_statement(statement, meta_info));
+            assembly.append(&mut get_assembly_statement(statement, meta_info)?);
             assembly.push(pop(rax()));
             if let Some(ref update) = **update {
-                assembly.append(&mut get_assembly_statement(update, meta_info));
+                assembly.append(&mut get_assembly_statement(update, meta_info)?);
                 assembly.push(pop(rax()));
             }
             assembly.push(jmp(start_label));
@@ -282,36 +290,36 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
 
             meta_info.pop_label_for_break();
 
-            assembly
+            Ok(assembly)
         }
         Statement::Break => {
             let mut assembly: Assembly = Vec::new();
             let label = meta_info.get_label_for_break();
             assembly.push(comment("break"));
             assembly.push(jmp(label.clone()));
-            assembly
+            Ok(assembly)
         }
 
         Statement::VarDef(data_type, var_name) => {
             meta_info.register_variable(var_name, data_type);
-            vec![push(immediate(0))]
+            Ok(vec![push(immediate(0))])
         }
     }
 }
 
-fn get_assembly_lval(lval: &String, meta_info: &mut MetaInfo) -> Assembly {
+fn get_assembly_lval(lval: &String, meta_info: &mut MetaInfo) -> Result<Assembly, CompilerError> {
     let id = match meta_info.get_variable(lval) {
         Some(var_info) => var_info.id,
-        None => panic!("variable {} is not defined", lval),
+        None => return Err(CompilerError::UndefinedVariable(lval.clone())),
     };
-    vec![
+    Ok(vec![
         mov(rax(), rbp()),
         sub(rax(), immediate((id + 1) as i32 * 8)),
         push(rax()),
-    ]
+    ])
 }
 
-fn get_assembly_expr(expr: &Expr, meta_info: &mut MetaInfo) -> Assembly {
+fn get_assembly_expr(expr: &Expr, meta_info: &mut MetaInfo) -> Result<Assembly, CompilerError> {
     match expr {
         Expr::ArithExpr(arith_expr) => get_assembly_arith_expr(arith_expr, meta_info),
         Expr::Equal(left, right) => {
@@ -334,10 +342,10 @@ fn get_compare_instruction(
     left: &ArithExpr,
     right: &ArithExpr,
     meta_info: &mut MetaInfo,
-) -> Assembly {
+) -> Result<Assembly, CompilerError> {
     let mut assembly: Assembly = Vec::new();
-    assembly.append(&mut get_assembly_arith_expr(left, meta_info));
-    assembly.append(&mut get_assembly_arith_expr(right, meta_info));
+    assembly.append(&mut get_assembly_arith_expr(left, meta_info)?);
+    assembly.append(&mut get_assembly_arith_expr(right, meta_info)?);
     assembly.append(&mut vec![
         pop(rdi()),
         pop(rax()),
@@ -346,53 +354,59 @@ fn get_compare_instruction(
         movzb(rax(), al()),
         push(rax()),
     ]);
-    assembly
+    Ok(assembly)
 }
 
-fn get_assembly_arith_expr(expr: &ArithExpr, meta_info: &mut MetaInfo) -> Assembly {
+fn get_assembly_arith_expr(
+    expr: &ArithExpr,
+    meta_info: &mut MetaInfo,
+) -> Result<Assembly, CompilerError> {
     match expr {
         ArithExpr::Factor(factor) => get_assembly_factor(factor, meta_info),
         ArithExpr::Add(expr, factor) => {
             let mut assembly: Assembly = Vec::new();
-            assembly.append(&mut get_assembly_arith_expr(expr, meta_info));
-            assembly.append(&mut get_assembly_factor(factor, meta_info));
+            assembly.append(&mut get_assembly_arith_expr(expr, meta_info)?);
+            assembly.append(&mut get_assembly_factor(factor, meta_info)?);
             assembly.append(&mut vec![
                 pop(rdi()),
                 pop(rax()),
                 add(rax(), rdi()),
                 push(rax()),
             ]);
-            assembly
+            Ok(assembly)
         }
         ArithExpr::Sub(expr, factor) => {
             let mut assembly: Assembly = Vec::new();
-            assembly.append(&mut get_assembly_arith_expr(expr, meta_info));
-            assembly.append(&mut get_assembly_factor(factor, meta_info));
+            assembly.append(&mut get_assembly_arith_expr(expr, meta_info)?);
+            assembly.append(&mut get_assembly_factor(factor, meta_info)?);
             assembly.append(&mut vec![
                 pop(rdi()),
                 pop(rax()),
                 sub(rax(), rdi()),
                 push(rax()),
             ]);
-            assembly
+            Ok(assembly)
         }
     }
 }
 
-fn get_assembly_factor(factor: &Factor, meta_info: &mut MetaInfo) -> Assembly {
+fn get_assembly_factor(
+    factor: &Factor,
+    meta_info: &mut MetaInfo,
+) -> Result<Assembly, CompilerError> {
     match factor {
         Factor::Unary(unary) => get_assembly_unary(unary, meta_info),
         Factor::Mul(factor, unary) => {
             let mut assembly: Assembly = Vec::new();
-            assembly.append(&mut get_assembly_factor(factor, meta_info));
-            assembly.append(&mut get_assembly_unary(unary, meta_info));
+            assembly.append(&mut get_assembly_factor(factor, meta_info)?);
+            assembly.append(&mut get_assembly_unary(unary, meta_info)?);
             assembly.append(&mut vec![pop(rdi()), pop(rax()), mul(rdi()), push(rax())]);
-            assembly
+            Ok(assembly)
         }
         Factor::Div(factor, unary) => {
             let mut assembly: Assembly = Vec::new();
-            assembly.append(&mut get_assembly_factor(factor, meta_info));
-            assembly.append(&mut get_assembly_unary(unary, meta_info));
+            assembly.append(&mut get_assembly_factor(factor, meta_info)?);
+            assembly.append(&mut get_assembly_unary(unary, meta_info)?);
             assembly.append(&mut vec![
                 pop(rdi()),
                 pop(rax()),
@@ -400,50 +414,50 @@ fn get_assembly_factor(factor: &Factor, meta_info: &mut MetaInfo) -> Assembly {
                 idiv(rdi()),
                 push(rax()),
             ]);
-            assembly
+            Ok(assembly)
         }
     }
 }
 
-fn get_assembly_unary(unary: &Unary, meta_info: &mut MetaInfo) -> Assembly {
+fn get_assembly_unary(unary: &Unary, meta_info: &mut MetaInfo) -> Result<Assembly, CompilerError> {
     match unary {
         Unary::Atom(atom) => get_assembly_atom(atom, meta_info),
         Unary::Neg(atom) => {
             let mut assembly: Assembly = Vec::new();
-            assembly.append(&mut get_assembly_atom(atom, meta_info));
+            assembly.append(&mut get_assembly_atom(atom, meta_info)?);
             assembly.append(&mut vec![pop(rax()), neg(rax()), push(rax())]);
-            assembly
+            Ok(assembly)
         }
         Unary::PointerDeref(atom) => {
             let mut assembly: Assembly = Vec::new();
-            assembly.append(&mut get_assembly_atom(atom, meta_info));
+            assembly.append(&mut get_assembly_atom(atom, meta_info)?);
             assembly.append(&mut vec![pop(rax()), mov(rax(), m_rax()), push(rax())]);
-            assembly
+            Ok(assembly)
         }
     }
 }
 
-fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Assembly {
+fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Result<Assembly, CompilerError> {
     match atom {
-        Atom::Number(n) => vec![push(Operand::Immediate(*n))],
+        Atom::Number(n) => Ok(vec![push(Operand::Immediate(*n))]),
         Atom::Expr(expr) => get_assembly_expr(expr, meta_info),
         Atom::Variable(lval) => {
             //let id = meta_info.get_variable_id_and_register_it(lval);
             let id = match meta_info.get_variable(lval) {
                 Some(var_info) => var_info.id,
-                None => panic!("variable {} is not defined", lval),
+                None => return Err(CompilerError::UndefinedVariable(lval.clone())),
             };
-            vec![
+            Ok(vec![
                 mov(rax(), rbp()),
                 sub(rax(), immediate((id + 1) as i32 * 8)),
                 push(m_rax()),
-            ]
+            ])
         }
         // 7 or more arguments are not supported
         Atom::FunctionCall(func_name, arguments) => {
             let mut assembly: Assembly = Vec::new();
             for argument in arguments.iter() {
-                assembly.append(&mut get_assembly_expr(argument, meta_info));
+                assembly.append(&mut get_assembly_expr(argument, meta_info)?);
             }
             for (_, register) in arguments.iter().zip(ARGUMENT_REGISTERS.iter()).rev() {
                 assembly.push(pop(register.clone()));
@@ -451,20 +465,20 @@ fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Assembly {
 
             assembly.push(call(func_name.clone()));
             assembly.push(push(rax()));
-            assembly
+            Ok(assembly)
         }
         Atom::AddressOf(lval) => {
             let id = match meta_info.get_variable(lval) {
                 Some(var_info) => var_info.id,
-                None => panic!("variable {} is not defined", lval),
+                None => return Err(CompilerError::UndefinedVariable(lval.clone())),
             };
-            vec![
+            Ok(vec![
                 comment("address of"),
                 mov(rax(), rbp()),
                 sub(rax(), immediate((id + 1) as i32 * 8)),
                 push(rax()),
                 comment("address of end"),
-            ]
+            ])
         }
     }
 }

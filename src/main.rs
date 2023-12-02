@@ -8,31 +8,30 @@ lalrpop_mod!(
 );
 pub mod assembly;
 pub mod ast;
+pub mod compile_error;
 pub mod gen_code;
 use crate::gen_code::print_assembly;
 use std::env;
+use std::process::ExitCode;
 
-#[derive(Debug)]
-enum CompilerError {
-    InvalidNumberOfArguments,
-    InvalidExpression,
-}
-
-fn main() -> Result<(), CompilerError> {
+fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
         eprintln!("The number of arguments is invalid");
-        return Err(CompilerError::InvalidNumberOfArguments);
+        return ExitCode::from(1);
     }
     match parser::ProgramParser::new().parse(&args[1]) {
         Ok(parse_tree) => {
-            print_assembly(&parse_tree);
+            if let Err(e) = print_assembly(&parse_tree) {
+                eprintln!("Failed to compile: {}", e);
+                return ExitCode::from(1);
+            }
         }
         Err(e) => {
             eprintln!("Failed to parse: {}", e);
-            return Err(CompilerError::InvalidExpression);
+            return ExitCode::from(1);
         }
     };
 
-    Ok(())
+    ExitCode::from(0)
 }
