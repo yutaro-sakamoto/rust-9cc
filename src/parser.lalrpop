@@ -104,6 +104,7 @@ Unary: Unary = {
 Atom: Atom = {
     r"[0-9]+" => Atom::Number(i32::from_str(<>).unwrap()),
     "(" <expr:Expr> ")" => Atom::Expr(Box::new(expr)),
+    "&" <Identifier> => Atom::AddressOf(<>),
     <identifier:Identifier> <arguments:ArgumentList?> => {
         match arguments {
             Some(arguments) => Atom::FunctionCall(identifier, arguments),

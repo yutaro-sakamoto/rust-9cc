@@ -53,5 +53,6 @@ pub enum Atom {
     Number(i32),
     Expr(Box<Expr>),
     Variable(String),
+    AddressOf(String),
     FunctionCall(String, Vec<Expr>),
 }

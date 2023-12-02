@@ -350,9 +350,11 @@ fn get_assembly_unary(unary: &Unary, meta_info: &mut MetaInfo) -> Assembly {
             assembly.append(&mut vec![pop(rax()), neg(rax()), push(rax())]);
             assembly
         }
-        Unary::PointerDeref(_) => {
-            //TODO temporary implementation
-            vec![mov(rax(), immediate(0)), push(rax())]
+        Unary::PointerDeref(atom) => {
+            let mut assembly: Assembly = Vec::new();
+            assembly.append(&mut get_assembly_atom(atom, meta_info));
+            assembly.append(&mut vec![pop(rax()), mov(rax(), m_rax()), push(rax())]);
+            assembly
         }
     }
 }
@@ -380,6 +382,16 @@ fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Assembly {
             assembly.push(call(func_name.clone()));
             assembly.push(push(rax()));
             assembly
+        }
+        Atom::AddressOf(lval) => {
+            let id = meta_info.get_variable_id_and_register_it(lval);
+            vec![
+                comment("address of"),
+                mov(rax(), rbp()),
+                sub(rax(), immediate((id + 1) as i32 * 8)),
+                push(rax()),
+                comment("address of end"),
+            ]
         }
     }
 }
