@@ -1,5 +1,6 @@
 /target
 tmp.s
 tmp
+tmpg
 lcov.info
 functions_for_test.o
