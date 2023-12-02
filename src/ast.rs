@@ -28,8 +28,15 @@ pub enum Statement {
 
 #[derive(Clone)]
 pub enum DataType {
+    Primitive(PrimitiveType),
+    Pointer(u32, Box<DataType>),
+}
+
+#[derive(Clone)]
+pub enum PrimitiveType {
     Int,
 }
+
 pub enum Expr {
     ArithExpr(Box<ArithExpr>),
     Equal(Box<ArithExpr>, Box<ArithExpr>),

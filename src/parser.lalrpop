@@ -48,7 +48,13 @@ Statement: Statement = {
 }
 
 DataType: DataType = {
-    "int" => DataType::Int,
+    <base_type: BaseType> <pointers: r"\*+O"> =>
+        DataType::Pointer(pointers.len() as u32, Box::new(DataType::Primitive(base_type))),
+    <BaseType> => DataType::Primitive(<>),
+}
+
+BaseType: PrimitiveType = {
+    "int" => PrimitiveType::Int,
 }
 
 AssignStatement: Statement = {
