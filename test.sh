@@ -132,6 +132,26 @@ int add3(int x, int y, int z) { x + y + z; }
 int sub(int x, int y) { x - y;}
 add3(1, 20, sub(100, 90));
 '
+assert_program 5 '
+int min3(int x, int y, int z) 
+{
+  if (x < y) {
+    if (x < z) {
+      return x;
+    } else {
+      return z;
+    }
+  } else {
+    if (y < z) {
+      return y;
+    } else {
+      return z;
+    }
+  }
+}
+int add(int x, int y) { x + y; }
+min3(add(5,1), add(2,4), add(3,2));
+'
 
 # test pointer
 assert_program 123 'int a; a = 123; int b; b = &a; *b;'
@@ -141,4 +161,5 @@ assert_program 3 'int x; x = 3; int y; y = 5; int z; z = &y + 8; *z;'
 assert_fail_compile 'a = 1; a;'
 assert_fail_compile 'a;'
 assert_fail_compile '&a;'
+
 echo OK
