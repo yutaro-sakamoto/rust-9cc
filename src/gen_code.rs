@@ -2,8 +2,15 @@ use crate::assembly::*;
 use crate::ast::*;
 use std::collections::HashMap;
 
+pub struct VarInfo {
+    id: u32,
+    // TODO: remove the following annotation
+    #[allow(dead_code)]
+    data_type: DataType,
+}
+
 pub struct MetaInfo {
-    scopes: Vec<HashMap<String, u32>>,
+    scopes: Vec<HashMap<String, VarInfo>>,
     label_count: u64,
     label_stack_for_break: Vec<String>,
 }
@@ -25,24 +32,32 @@ impl MetaInfo {
         self.scopes.pop();
     }
 
-    pub fn register_variables(&mut self, variables: &[String]) {
+    pub fn register_variables(&mut self, variables: &[(DataType, String)]) {
         let mut id = self.scopes.last().unwrap().len() as u32;
         let current_scope = self.scopes.last_mut().unwrap();
-        for variable in variables.iter() {
-            current_scope.insert(variable.clone(), id);
+        for (data_type, var_name) in variables.iter() {
+            current_scope.insert(
+                var_name.clone(),
+                VarInfo {
+                    id,
+                    data_type: data_type.clone(),
+                },
+            );
             id += 1;
         }
     }
 
-    pub fn get_variable_id_and_register_it(&mut self, lval: &String) -> u32 {
-        let current_scope = self.scopes.last().unwrap();
-        if let Some(id) = current_scope.get(lval) {
-            return *id;
-        }
-        let number_of_variables = self.get_number_of_variables();
-        let current_scope_mut = self.scopes.last_mut().unwrap();
-        current_scope_mut.insert(lval.clone(), number_of_variables);
-        number_of_variables
+    pub fn register_variable(&mut self, variable: &str, data_type: &DataType) {
+        let current_scope = self.scopes.last_mut().unwrap();
+        let var_info = VarInfo {
+            id: current_scope.len() as u32,
+            data_type: data_type.clone(),
+        };
+        current_scope.insert(variable.to_string(), var_info);
+    }
+
+    pub fn get_variable(&self, lval: &String) -> Option<&VarInfo> {
+        self.scopes.last().unwrap().get(lval)
     }
 
     pub fn get_number_of_variables(&self) -> u32 {
@@ -276,35 +291,24 @@ pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -
             assembly.push(jmp(label.clone()));
             assembly
         }
+
+        Statement::VarDef(data_type, var_name) => {
+            meta_info.register_variable(var_name, data_type);
+            vec![push(immediate(0))]
+        }
     }
 }
 
 fn get_assembly_lval(lval: &String, meta_info: &mut MetaInfo) -> Assembly {
-    let id = meta_info.get_variable_id_and_register_it(lval);
+    let id = match meta_info.get_variable(lval) {
+        Some(var_info) => var_info.id,
+        None => panic!("variable {} is not defined", lval),
+    };
     vec![
         mov(rax(), rbp()),
         sub(rax(), immediate((id + 1) as i32 * 8)),
         push(rax()),
     ]
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_get_variable_id_and_register_it() {
-        let mut meta_info = MetaInfo::new();
-        let a_id = meta_info.get_variable_id_and_register_it(&"a".to_string());
-        let b_id = meta_info.get_variable_id_and_register_it(&"b".to_string());
-        assert_eq!(
-            meta_info.get_variable_id_and_register_it(&"a".to_string()),
-            a_id
-        );
-        assert_eq!(
-            meta_info.get_variable_id_and_register_it(&"b".to_string()),
-            b_id
-        );
-    }
 }
 
 fn get_assembly_expr(expr: &Expr, meta_info: &mut MetaInfo) -> Assembly {
@@ -424,7 +428,11 @@ fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Assembly {
         Atom::Number(n) => vec![push(Operand::Immediate(*n))],
         Atom::Expr(expr) => get_assembly_expr(expr, meta_info),
         Atom::Variable(lval) => {
-            let id = meta_info.get_variable_id_and_register_it(lval);
+            //let id = meta_info.get_variable_id_and_register_it(lval);
+            let id = match meta_info.get_variable(lval) {
+                Some(var_info) => var_info.id,
+                None => panic!("variable {} is not defined", lval),
+            };
             vec![
                 mov(rax(), rbp()),
                 sub(rax(), immediate((id + 1) as i32 * 8)),
@@ -446,7 +454,10 @@ fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Assembly {
             assembly
         }
         Atom::AddressOf(lval) => {
-            let id = meta_info.get_variable_id_and_register_it(lval);
+            let id = match meta_info.get_variable(lval) {
+                Some(var_info) => var_info.id,
+                None => panic!("variable {} is not defined", lval),
+            };
             vec![
                 comment("address of"),
                 mov(rax(), rbp()),

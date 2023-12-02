@@ -16,16 +16,20 @@ ProgramUnit: ProgramUnit = {
     <statement: Statement> => ProgramUnit::Statement(Box::new(statement)),
 }
 
-Parameters: Vec<String> = {
-    <identifier: Identifier> <rest: RestParameter*> => {
-        let mut ret = vec![identifier];
+Parameters: Vec<(DataType, String)> = {
+    <parameter: Parameter> <rest: RestParameter*> => {
+        let mut ret = vec![parameter];
         ret.extend(rest);
         ret
     }
 }
 
-RestParameter: String = {
-    "," <identifier: Identifier> => identifier,
+Parameter: (DataType, String) = {
+    <data_type: DataType> <identifier: Identifier> => (data_type, identifier),
+}
+
+RestParameter: (DataType, String) = {
+    "," <Parameter> => <>,
 }
         
 Statement: Statement = {
@@ -40,6 +44,11 @@ Statement: Statement = {
     "for" "(" <init: ForInit?> ";" <condition: Expr?> ";" <step: ForStep?> ")" <block: BlockStatement> =>
         Statement::For(Box::new(init), Box::new(condition), Box::new(step), Box::new(block)),
     "break" ";" => Statement::Break,
+    <data_type: DataType> <identifier: Identifier> ";" => Statement::VarDef(data_type, identifier),
+}
+
+DataType: DataType = {
+    "int" => DataType::Int,
 }
 
 AssignStatement: Statement = {

@@ -5,7 +5,7 @@ pub struct Program {
 }
 
 pub enum ProgramUnit {
-    FuncDef(String, Vec<String>, Box<Statement>),
+    FuncDef(String, Vec<(DataType, String)>, Box<Statement>),
     Statement(Box<Statement>),
 }
 
@@ -23,6 +23,12 @@ pub enum Statement {
         Box<Statement>,
     ),
     Break,
+    VarDef(DataType, String),
+}
+
+#[derive(Clone)]
+pub enum DataType {
+    Int,
 }
 pub enum Expr {
     ArithExpr(Box<ArithExpr>),
