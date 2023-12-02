@@ -188,18 +188,16 @@ pub fn get_assembly_statement(
             assembly.push(comment("assign end"));
             Ok(assembly)
         }
-        Statement::AssignPointer(left, expr) => {
+        Statement::AssignPointer(depth, left, expr) => {
             let mut assembly: Assembly = Vec::new();
             assembly.push(comment("assign pointer"));
             assembly.append(&mut get_assembly_lval(left, meta_info)?);
             assembly.append(&mut get_assembly_expr(expr, meta_info)?);
-            assembly.append(&mut vec![
-                pop(rdi()),
-                pop(rax()),
-                mov(rbx(), m_rax()),
-                mov(m_rbx(), rdi()),
-                push(rdi()),
-            ]);
+            assembly.append(&mut vec![pop(rdi()), pop(rax())]);
+            for _ in 0..*depth {
+                assembly.push(mov(rax(), m_rax()));
+            }
+            assembly.append(&mut vec![mov(m_rax(), rdi()), push(rdi())]);
             assembly.push(comment("assign pointer end"));
             Ok(assembly)
         }

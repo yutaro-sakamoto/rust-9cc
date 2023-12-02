@@ -49,13 +49,18 @@ Statement: Statement = {
 }
 
 DataType: DataType = {
-    <base_type: BaseType> <pointer: Pointer> =>
+    <base_type: BaseType> <pointer: Astarisk> =>
         DataType::Pointer(pointer, Box::new(DataType::Primitive(base_type))),
     <BaseType> => DataType::Primitive(<>),
 }
-Pointer: u32 = {
-    "*" => 1,
-    "*" <Pointer> => <> + 1,
+
+// TODO: support more than 5 asterisks
+Astarisk: u32 = {
+    "*" => <>.len() as u32,
+    "**" => <>.len() as u32,
+    "***" => <>.len() as u32,
+    "****" => <>.len() as u32,
+    "*****" => <>.len() as u32,
 }
 
 BaseType: PrimitiveType = {
@@ -66,8 +71,18 @@ AssignStatement: Statement = {
     <identifier: Identifier> "=" <expr: Expr> => Statement::Assign(identifier, Box::new(expr)),
 }
 
+// TODO: support more than 5 asterisks
 AssignPointerStatement: Statement = {
-    "*" <identifier: Identifier> "=" <expr: Expr> => Statement::AssignPointer(identifier, Box::new(expr)),
+    "*" <identifier: Identifier> "=" <expr: Expr> =>
+        Statement::AssignPointer(1, identifier, Box::new(expr)),
+    "**" <identifier: Identifier> "=" <expr: Expr> =>
+        Statement::AssignPointer(2, identifier, Box::new(expr)),
+    "***" <identifier: Identifier> "=" <expr: Expr> =>
+        Statement::AssignPointer(3, identifier, Box::new(expr)),
+    "****" <identifier: Identifier> "=" <expr: Expr> =>
+        Statement::AssignPointer(4, identifier, Box::new(expr)),
+    "*****" <identifier: Identifier> "=" <expr: Expr> =>
+        Statement::AssignPointer(5, identifier, Box::new(expr)),
 }
 
 SingleExprStatement: Statement = {

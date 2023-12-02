@@ -164,5 +164,7 @@ assert_fail_compile '&a;'
 
 # test assign statement using pointers
 assert_program 143 'int x; int* y; y = &x; *y = 143; x;'
+assert_program 143 'int x; int * y; int** z; y = &x; z = &y; **z = 143; x;'
+assert_program 143 'int x; int * y; int** z; int *** w; y = &x; z = &y; w = &z; ***w = 143; x;'
 
 echo OK
