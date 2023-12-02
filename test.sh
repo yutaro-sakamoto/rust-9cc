@@ -125,11 +125,11 @@ assert_program 102 'int a; a = sub(5, 3); int b; b = avg3(100, 50, 150); a + b;'
 assert_program 21 'sum6(1,2,3,4,5,6);' $C_FUNCTION_OBJ
 
 # test function definitions
-assert_program 3 'fn add(int x, int y) { x + y; } add(1, 2);'
-assert_program 4 'fn sub(int x, int y) { x - y; } sub(5, 1);'
+assert_program 3 'int add(int x, int y) { x + y; } add(1, 2);'
+assert_program 4 'int sub(int x, int y) { x - y; } sub(5, 1);'
 assert_program 31 '
-fn add3(int x, int y, int z) { x + y + z; }
-fn sub(int x, int y) { x - y;}
+int add3(int x, int y, int z) { x + y + z; }
+int sub(int x, int y) { x - y;}
 add3(1, 20, sub(100, 90));
 '
 

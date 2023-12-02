@@ -114,7 +114,7 @@ fn print_assembly_internal(
     let mut func_def_code: Assembly = Vec::new();
     for program_unit in program.program_units.iter() {
         match program_unit {
-            ProgramUnit::FuncDef(func_name, parameters, statement) => {
+            ProgramUnit::FuncDef(_, func_name, parameters, statement) => {
                 // Enter a new scope and register parameters of functions
                 meta_info.push_scope();
                 meta_info.register_variables(parameters);

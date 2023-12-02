@@ -7,10 +7,10 @@ pub Program: Program = {
 }
 
 ProgramUnit: ProgramUnit = {
-    "fn" <func_name: Identifier> "(" <parameters: Parameters?> ")" <block: BlockStatement> => {
+    <data_type: DataType> <func_name: Identifier> "(" <parameters: Parameters?> ")" <block: BlockStatement> => {
         match parameters {
-            Some(parameters) => ProgramUnit::FuncDef(func_name, parameters, Box::new(block)),
-            None => ProgramUnit::FuncDef(func_name, vec![], Box::new(block)),
+            Some(parameters) => ProgramUnit::FuncDef(data_type, func_name, parameters, Box::new(block)),
+            None => ProgramUnit::FuncDef(data_type, func_name, vec![], Box::new(block)),
         }
     },
     <statement: Statement> => ProgramUnit::Statement(Box::new(statement)),

@@ -5,7 +5,7 @@ pub struct Program {
 }
 
 pub enum ProgramUnit {
-    FuncDef(String, Vec<(DataType, String)>, Box<Statement>),
+    FuncDef(DataType, String, Vec<(DataType, String)>, Box<Statement>),
     Statement(Box<Statement>),
 }
 
