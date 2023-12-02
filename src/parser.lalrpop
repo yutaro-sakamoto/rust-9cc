@@ -49,12 +49,13 @@ Statement: Statement = {
 }
 
 DataType: DataType = {
-    <base_type: BaseType> <pointers: Pointer+> =>
-        DataType::Pointer(pointers.len() as u32, Box::new(DataType::Primitive(base_type))),
+    <base_type: BaseType> <pointer: Pointer> =>
+        DataType::Pointer(pointer, Box::new(DataType::Primitive(base_type))),
     <BaseType> => DataType::Primitive(<>),
 }
-Pointer: () = {
-    "*" => (),
+Pointer: u32 = {
+    "*" => 1,
+    "*" <Pointer> => <> + 1,
 }
 
 BaseType: PrimitiveType = {
