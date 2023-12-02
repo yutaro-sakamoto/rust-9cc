@@ -9,9 +9,13 @@ pub fn print_assembly_code(assembly: &Assembly) {
 }
 
 pub fn print_single_instruction(instruction: &Instruction) {
-    println!("  {:?}", instruction);
+    match instruction {
+        Instruction::Label(_) => println!("{:?}", instruction),
+        _ => println!("  {:?}", instruction),
+    }
 }
 
+#[derive(Clone)]
 pub enum Instruction {
     Push(Operand),
     Pop(Operand),
@@ -216,28 +220,8 @@ pub fn rdi() -> Operand {
     Operand::Register(Register::RDI)
 }
 
-pub fn rsi() -> Operand {
-    Operand::Register(Register::RSI)
-}
-
-pub fn rdx() -> Operand {
-    Operand::Register(Register::RDX)
-}
-
-pub fn rcx() -> Operand {
-    Operand::Register(Register::RCX)
-}
-
 pub fn rsp() -> Operand {
     Operand::Register(Register::RSP)
-}
-
-pub fn r8() -> Operand {
-    Operand::Register(Register::R8)
-}
-
-pub fn r9() -> Operand {
-    Operand::Register(Register::R9)
 }
 
 pub fn al() -> Operand {

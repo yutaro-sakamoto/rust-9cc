@@ -114,7 +114,13 @@ assert_program 102 'a = sub(5, 3); b = avg3(100, 50, 150); a + b;' $C_FUNCTION_O
 assert_program 21 'sum6(1,2,3,4,5,6);' $C_FUNCTION_OBJ
 
 # test function definitions
-assert_program 123 'fn add(x, y) { x + y; } 123;'
+assert_program 3 'fn add(x, y) { x + y; } add(1, 2);'
+assert_program 4 'fn sub(x, y) { x - y; } sub(5, 1);'
+assert_program 31 '
+fn add3(x, y, z) { x + y + z; }
+fn sub(x, y) { x - y;}
+add3(1, 20, sub(100, 90));
+'
 
 # test pointer
 assert_program 123 'a = 123; b = &a; *b;'

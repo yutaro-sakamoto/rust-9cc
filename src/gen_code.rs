@@ -3,7 +3,7 @@ use crate::ast::*;
 use std::collections::HashMap;
 
 pub struct MetaInfo {
-    variable_map: HashMap<String, u32>,
+    scopes: Vec<HashMap<String, u32>>,
     label_count: u64,
     label_stack_for_break: Vec<String>,
 }
@@ -11,25 +11,42 @@ pub struct MetaInfo {
 impl MetaInfo {
     pub fn new() -> MetaInfo {
         MetaInfo {
-            variable_map: HashMap::new(),
+            scopes: vec![HashMap::new()],
             label_count: 0,
             label_stack_for_break: Vec::new(),
         }
     }
 
-    pub fn get_variable_id_and_register_it(&mut self, lval: &String) -> u32 {
-        match self.variable_map.get(lval) {
-            Some(id) => *id,
-            None => {
-                let number_of_variables = self.get_number_of_variables();
-                self.variable_map.insert(lval.clone(), number_of_variables);
-                number_of_variables
-            }
+    pub fn push_scope(&mut self) {
+        self.scopes.push(HashMap::new());
+    }
+
+    pub fn pop_scope(&mut self) {
+        self.scopes.pop();
+    }
+
+    pub fn register_variables(&mut self, variables: &[String]) {
+        let mut id = self.scopes.last().unwrap().len() as u32;
+        let current_scope = self.scopes.last_mut().unwrap();
+        for variable in variables.iter() {
+            current_scope.insert(variable.clone(), id);
+            id += 1;
         }
     }
 
+    pub fn get_variable_id_and_register_it(&mut self, lval: &String) -> u32 {
+        let current_scope = self.scopes.last().unwrap();
+        if let Some(id) = current_scope.get(lval) {
+            return *id;
+        }
+        let number_of_variables = self.get_number_of_variables();
+        let current_scope_mut = self.scopes.last_mut().unwrap();
+        current_scope_mut.insert(lval.clone(), number_of_variables);
+        number_of_variables
+    }
+
     pub fn get_number_of_variables(&self) -> u32 {
-        self.variable_map.len() as u32
+        self.scopes.last().unwrap().len() as u32
     }
 
     pub fn get_new_label(&mut self) -> String {
@@ -50,6 +67,15 @@ impl MetaInfo {
     }
 }
 
+const ARGUMENT_REGISTERS: &[Operand] = &[
+    Operand::Register(Register::RDI),
+    Operand::Register(Register::RSI),
+    Operand::Register(Register::RDX),
+    Operand::Register(Register::RCX),
+    Operand::Register(Register::R8),
+    Operand::Register(Register::R9),
+];
+
 impl Default for MetaInfo {
     fn default() -> Self {
         Self::new()
@@ -64,13 +90,46 @@ pub fn print_assembly(program: &Program) {
 fn print_assembly_internal(program: &Program, meta_info: &mut MetaInfo) {
     println!(".intel_syntax noprefix");
     println!(".global main\n");
-    println!("main:");
+    let main_label = label("main".to_string());
     let header_code = vec![push(rbp()), mov(rbp(), rsp())];
+    let footer_code = vec![mov(rsp(), rbp()), pop(rbp()), ret()];
     let mut main_code: Assembly = Vec::new();
+    let mut func_def_code: Assembly = Vec::new();
     for program_unit in program.program_units.iter() {
         match program_unit {
-            ProgramUnit::FuncDef(_, _, _) => {
-                //do nothing
+            ProgramUnit::FuncDef(func_name, parameters, statement) => {
+                // Enter a new scope and register parameters of functions
+                meta_info.push_scope();
+                meta_info.register_variables(parameters);
+
+                // Function label
+                func_def_code.push(label(func_name.clone()));
+
+                // Prelude code
+                func_def_code.append(&mut header_code.clone());
+                func_def_code.push(sub(rsp(), immediate(8 * parameters.len() as i32)));
+
+                // Copy arguments to local variables
+                for (index, (register, _)) in
+                    ARGUMENT_REGISTERS.iter().zip(parameters.iter()).enumerate()
+                {
+                    func_def_code.append(&mut vec![
+                        comment("copy arguments to local variables"),
+                        mov(rax(), rbp()),
+                        sub(rax(), immediate((index + 1) as i32 * 8)),
+                        mov(m_rax(), register.clone()),
+                        comment("copy arguments to local variables end"),
+                    ]);
+                }
+
+                // Function body
+                func_def_code.append(&mut get_assembly_statement(statement, meta_info));
+
+                // Postlude code
+                func_def_code.append(&mut footer_code.clone());
+
+                // Leave the scope
+                meta_info.pop_scope();
             }
             ProgramUnit::Statement(statement) => {
                 main_code.append(&mut get_assembly_statement(statement, meta_info));
@@ -80,12 +139,13 @@ fn print_assembly_internal(program: &Program, meta_info: &mut MetaInfo) {
     }
     let number_of_variables = meta_info.get_number_of_variables();
     let sub_rsp_code = sub(rsp(), immediate(8 * number_of_variables as i32));
-    let footer_code = vec![mov(rsp(), rbp()), pop(rbp()), ret()];
 
+    print_single_instruction(&main_label);
     print_assembly_code(&header_code);
     print_single_instruction(&sub_rsp_code);
     print_assembly_code(&main_code);
     print_assembly_code(&footer_code);
+    print_assembly_code(&func_def_code);
 }
 
 pub fn get_assembly_statement(statement: &Statement, meta_info: &mut MetaInfo) -> Assembly {
@@ -374,11 +434,13 @@ fn get_assembly_atom(atom: &Atom, meta_info: &mut MetaInfo) -> Assembly {
         // 7 or more arguments are not supported
         Atom::FunctionCall(func_name, arguments) => {
             let mut assembly: Assembly = Vec::new();
-            let argument_registers = vec![rdi(), rsi(), rdx(), rcx(), r8(), r9()];
-            for (argument, register) in arguments.iter().zip(argument_registers.iter()) {
+            for argument in arguments.iter() {
                 assembly.append(&mut get_assembly_expr(argument, meta_info));
+            }
+            for (_, register) in arguments.iter().zip(ARGUMENT_REGISTERS.iter()).rev() {
                 assembly.push(pop(register.clone()));
             }
+
             assembly.push(call(func_name.clone()));
             assembly.push(push(rax()));
             assembly
