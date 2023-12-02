@@ -12,6 +12,7 @@ pub enum ProgramUnit {
 pub enum Statement {
     Expr(Box<Expr>),
     Assign(String, Box<Expr>),
+    AssignPointer(String, Box<Expr>),
     Return(Box<Expr>),
     If(Box<Expr>, Box<Statement>, Box<Option<Statement>>),
     Block(Vec<Statement>),

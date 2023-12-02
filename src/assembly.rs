@@ -176,6 +176,7 @@ impl fmt::Debug for Operand {
 #[derive(Clone)]
 pub enum Register {
     RAX,
+    RBX,
     RBP,
     RDI,
     RSI,
@@ -191,6 +192,7 @@ impl fmt::Debug for Register {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Register::RAX => write!(f, "rax"),
+            Register::RBX => write!(f, "rbx"),
             Register::RBP => write!(f, "rbp"),
             Register::RDI => write!(f, "rdi"),
             Register::RSI => write!(f, "rsi"),
@@ -210,6 +212,14 @@ pub fn rax() -> Operand {
 
 pub fn m_rax() -> Operand {
     Operand::Memory(Register::RAX)
+}
+
+pub fn rbx() -> Operand {
+    Operand::Register(Register::RBX)
+}
+
+pub fn m_rbx() -> Operand {
+    Operand::Memory(Register::RBX)
 }
 
 pub fn rbp() -> Operand {

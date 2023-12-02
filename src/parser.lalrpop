@@ -34,6 +34,7 @@ RestParameter: (DataType, String) = {
         
 Statement: Statement = {
     <AssignStatement> ";" => <>,
+    <AssignPointerStatement> ";" => <>,
     <SingleExprStatement> ";" => <>,
     "return" <Expr> ";" => Statement::Return(Box::new(<>)),
     "if" "(" <condition: Expr> ")" <if_block: BlockStatement> <else_block: ElseBlock?> =>
@@ -48,9 +49,12 @@ Statement: Statement = {
 }
 
 DataType: DataType = {
-    <base_type: BaseType> <pointers: r"\*+O"> =>
+    <base_type: BaseType> <pointers: Pointer+> =>
         DataType::Pointer(pointers.len() as u32, Box::new(DataType::Primitive(base_type))),
     <BaseType> => DataType::Primitive(<>),
+}
+Pointer: () = {
+    "*" => (),
 }
 
 BaseType: PrimitiveType = {
@@ -59,6 +63,10 @@ BaseType: PrimitiveType = {
 
 AssignStatement: Statement = {
     <identifier: Identifier> "=" <expr: Expr> => Statement::Assign(identifier, Box::new(expr)),
+}
+
+AssignPointerStatement: Statement = {
+    "*" <identifier: Identifier> "=" <expr: Expr> => Statement::AssignPointer(identifier, Box::new(expr)),
 }
 
 SingleExprStatement: Statement = {

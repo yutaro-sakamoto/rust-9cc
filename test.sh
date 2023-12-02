@@ -162,4 +162,7 @@ assert_fail_compile 'a = 1; a;'
 assert_fail_compile 'a;'
 assert_fail_compile '&a;'
 
+# test assign statement using pointers
+assert_program 143 'int x; int* y; y = &x; *y = 143; x;'
+
 echo OK
