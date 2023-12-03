@@ -371,51 +371,64 @@ fn get_compare_instruction(
     Ok(assembly)
 }
 
+fn get_assembly_sub_add(
+    left: &ArithExpr,
+    right: &Factor,
+    operator_str: &str,
+    add_sub_instruction: &dyn Fn(Operand, Operand) -> Instruction,
+    meta_info: &mut MetaInfo,
+) -> Result<Assembly, CompilerError> {
+    let mut assembly: Assembly = Vec::new();
+    assembly.append(&mut get_assembly_arith_expr(left, meta_info)?);
+    assembly.append(&mut get_assembly_factor(right, meta_info)?);
+    assembly.append(&mut vec![pop(rdi()), pop(rax())]);
+    let left_type = match infer_type_arith_expr(left, meta_info) {
+        Ok(data_type) => data_type,
+        Err(e) => return Err(CompilerError::TypeMismatch(e)),
+    };
+    match left_type {
+        DataType::Primitive(PrimitiveType::Int) => assembly.push(add_sub_instruction(rax(), rdi())),
+        DataType::Pointer(_, base_type) => {
+            let size = match *base_type {
+                DataType::Primitive(PrimitiveType::Int) => 8,
+                _ => 8,
+            };
+            assembly.append(&mut vec![
+                imul(rdi(), immediate(size)),
+                add_sub_instruction(rax(), rdi()),
+            ]);
+        }
+        _ => {
+            return Err(CompilerError::TypeMismatch(format!(
+                "left side of {} is not int or pointer",
+                operator_str
+            )))
+        }
+    }
+    assembly.append(&mut vec![push(rax())]);
+    Ok(assembly)
+}
+
 fn get_assembly_arith_expr(
     expr: &ArithExpr,
     meta_info: &mut MetaInfo,
 ) -> Result<Assembly, CompilerError> {
     match expr {
         ArithExpr::Factor(factor) => get_assembly_factor(factor, meta_info),
-        ArithExpr::Add(expr, factor) => {
-            let mut assembly: Assembly = Vec::new();
-            assembly.append(&mut get_assembly_arith_expr(expr, meta_info)?);
-            assembly.append(&mut get_assembly_factor(factor, meta_info)?);
-            assembly.append(&mut vec![pop(rdi()), pop(rax())]);
-            let left_type = match infer_type_arith_expr(expr, meta_info) {
-                Ok(data_type) => data_type,
-                Err(e) => return Err(CompilerError::TypeMismatch(e)),
-            };
-            match left_type {
-                DataType::Primitive(PrimitiveType::Int) => assembly.push(add(rax(), rdi())),
-                DataType::Pointer(_, base_type) => {
-                    let size = match *base_type {
-                        DataType::Primitive(PrimitiveType::Int) => 8,
-                        _ => 8,
-                    };
-                    assembly.append(&mut vec![imul(rdi(), immediate(size)), add(rax(), rdi())]);
-                }
-                _ => {
-                    return Err(CompilerError::TypeMismatch(
-                        "left side of + is not int or pointer".to_string(),
-                    ))
-                }
-            }
-            assembly.append(&mut vec![push(rax())]);
-            Ok(assembly)
-        }
-        ArithExpr::Sub(expr, factor) => {
-            let mut assembly: Assembly = Vec::new();
-            assembly.append(&mut get_assembly_arith_expr(expr, meta_info)?);
-            assembly.append(&mut get_assembly_factor(factor, meta_info)?);
-            assembly.append(&mut vec![
-                pop(rdi()),
-                pop(rax()),
-                sub(rax(), rdi()),
-                push(rax()),
-            ]);
-            Ok(assembly)
-        }
+        ArithExpr::Add(expr, factor) => get_assembly_sub_add(
+            expr,
+            factor,
+            "+",
+            &|o1: Operand, o2: Operand| add(o1, o2),
+            meta_info,
+        ),
+        ArithExpr::Sub(expr, factor) => get_assembly_sub_add(
+            expr,
+            factor,
+            "-",
+            &|o1: Operand, o2: Operand| sub(o1, o2),
+            meta_info,
+        ),
     }
 }
 

@@ -167,5 +167,7 @@ assert_program 143 'int x; int* y; y = &x; *y = 143; x;'
 assert_program 143 'int x; int * y; int** z; y = &x; z = &y; **z = 143; x;'
 assert_program 143 'int x; int * y; int** z; int *** w; y = &x; z = &y; w = &z; ***w = 143; x;'
 
+# test pointer arithmetics
 assert_program 3 'int x; x = 3; int y; y = 5; int z; z = &y + 1; *z;'
+assert_program 5 'int x; x = 3; int y; y = 5; int z; z = &x - 1; *z;'
 echo OK
