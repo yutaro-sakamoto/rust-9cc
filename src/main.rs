@@ -10,6 +10,7 @@ pub mod assembly;
 pub mod ast;
 pub mod compile_error;
 pub mod gen_code;
+pub mod infer_type;
 use crate::gen_code::print_assembly;
 use std::env;
 use std::process::ExitCode;

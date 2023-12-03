@@ -1,13 +1,14 @@
 use crate::assembly::*;
 use crate::ast::*;
 use crate::compile_error::CompilerError;
+use crate::infer_type::*;
 use std::collections::HashMap;
 
 pub struct VarInfo {
-    id: u32,
+    pub id: u32,
     // TODO: remove the following annotation
     #[allow(dead_code)]
-    data_type: DataType,
+    pub data_type: DataType,
 }
 
 pub struct MetaInfo {
@@ -380,12 +381,27 @@ fn get_assembly_arith_expr(
             let mut assembly: Assembly = Vec::new();
             assembly.append(&mut get_assembly_arith_expr(expr, meta_info)?);
             assembly.append(&mut get_assembly_factor(factor, meta_info)?);
-            assembly.append(&mut vec![
-                pop(rdi()),
-                pop(rax()),
-                add(rax(), rdi()),
-                push(rax()),
-            ]);
+            assembly.append(&mut vec![pop(rdi()), pop(rax())]);
+            let left_type = match infer_type_arith_expr(expr, meta_info) {
+                Ok(data_type) => data_type,
+                Err(e) => return Err(CompilerError::TypeMismatch(e)),
+            };
+            match left_type {
+                DataType::Primitive(PrimitiveType::Int) => assembly.push(add(rax(), rdi())),
+                DataType::Pointer(_, base_type) => {
+                    let size = match *base_type {
+                        DataType::Primitive(PrimitiveType::Int) => 8,
+                        _ => 8,
+                    };
+                    assembly.append(&mut vec![imul(rdi(), immediate(size)), add(rax(), rdi())]);
+                }
+                _ => {
+                    return Err(CompilerError::TypeMismatch(
+                        "left side of + is not int or pointer".to_string(),
+                    ))
+                }
+            }
+            assembly.append(&mut vec![push(rax())]);
             Ok(assembly)
         }
         ArithExpr::Sub(expr, factor) => {

@@ -23,6 +23,7 @@ pub enum Instruction {
     Add(Operand, Operand),
     Sub(Operand, Operand),
     Mul(Operand),
+    IMul(Operand, Operand),
     Idiv(Operand),
     Neg(Operand),
     Cqo,
@@ -49,6 +50,7 @@ impl fmt::Debug for Instruction {
             Instruction::Add(o1, o2) => write!(f, "add {:?}, {:?}", o1, o2),
             Instruction::Sub(o1, o2) => write!(f, "sub {:?}, {:?}", o1, o2),
             Instruction::Mul(o) => write!(f, "mul {:?}", o),
+            Instruction::IMul(o1, o2) => write!(f, "imul {:?}, {:?}", o1, o2),
             Instruction::Idiv(o) => write!(f, "idiv {:?}", o),
             Instruction::Neg(o) => write!(f, "neg {:?}", o),
             Instruction::Cqo => write!(f, "cqo"),
@@ -90,6 +92,10 @@ pub fn sub(operand1: Operand, operand2: Operand) -> Instruction {
 
 pub fn mul(operand: Operand) -> Instruction {
     Instruction::Mul(operand)
+}
+
+pub fn imul(operand1: Operand, operand2: Operand) -> Instruction {
+    Instruction::IMul(operand1, operand2)
 }
 
 pub fn idiv(operand: Operand) -> Instruction {

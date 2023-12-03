@@ -155,7 +155,7 @@ min3(add(5,1), add(2,4), add(3,2));
 
 # test pointer
 assert_program 123 'int a; a = 123; int b; b = &a; *b;'
-assert_program 3 'int x; x = 3; int y; y = 5; int z; z = &y + 8; *z;'
+#assert_program 3 'int x; x = 3; int y; y = 5; int z; z = &y + 8; *z;'
 
 # test undefined variable
 assert_fail_compile 'a = 1; a;'
@@ -167,4 +167,5 @@ assert_program 143 'int x; int* y; y = &x; *y = 143; x;'
 assert_program 143 'int x; int * y; int** z; y = &x; z = &y; **z = 143; x;'
 assert_program 143 'int x; int * y; int** z; int *** w; y = &x; z = &y; w = &z; ***w = 143; x;'
 
+assert_program 3 'int x; x = 3; int y; y = 5; int z; z = &y + 1; *z;'
 echo OK

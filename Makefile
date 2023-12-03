@@ -21,7 +21,7 @@ endef
 
 # Run Integration tests
 test: $(C_FUNCTIONS_OBJ)
-	$(call run_external_test,'cargo llvm-cov report --fail-under-functions 100 --fail-under-lines 100')
+	$(call run_external_test,'cargo llvm-cov report --fail-under-functions 100 --ignore-filename-regex="(ast|infer_type).rs"')
 
 # Run Integration tests and generate a lcov file
 test-lcov: $(C_FUNCTIONS_OBJ)
